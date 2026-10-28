@@ -12,9 +12,10 @@ from pathlib import Path
 import re,hashlib,sys,argparse
 from build_disassembly import decode,B,H
 HERE=Path(__file__).resolve().parent
+DEFAULT_SOURCE=(HERE/'LEX31_full_annotated.asm' if (HERE/'LEX31_full_annotated.asm').exists() else HERE.parent/'firmware'/'LEX31_full_annotated.asm')
 parser=argparse.ArgumentParser()
-parser.add_argument('--source',type=Path,default=HERE/'LEX31_full_annotated.asm')
-parser.add_argument('--out',type=Path,default=HERE/'rebuilt_from_source.bin')
+parser.add_argument('--source',type=Path,default=DEFAULT_SOURCE)
+parser.add_argument('--out',type=Path,default=DEFAULT_SOURCE.parent/'rebuilt_from_source.bin')
 parser.add_argument('--allow-changes',action='store_true',help='Permit deliberate ROM changes in source')
 args=parser.parse_args()
 SRC=args.source
@@ -118,7 +119,7 @@ for ln in lines:
 if len(covered)!=0x3000:raise ValueError(f'uncovered bytes: {len(covered)}')
 args.out.write_bytes(rebuilt)
 if not args.allow_changes:
- for i,name in enumerate(('U2_red','U3_green','U4_white')):(HERE/f'{name}_from_source.bin').write_bytes(rebuilt[4096*i:4096*(i+1)])
+ for i,name in enumerate(('U2_red','U3_green','U4_white')):(SRC.parent/f'{name}_from_source.bin').write_bytes(rebuilt[4096*i:4096*(i+1)])
 print('source:',SRC,'instructions:',instruction_count,'data bytes:',data_count)
 print('binary SHA256:',hashlib.sha256(rebuilt).hexdigest())
 if rebuilt!=B and not args.allow_changes:

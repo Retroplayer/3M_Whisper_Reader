@@ -12,11 +12,16 @@ from dataclasses import dataclass
 
 HERE=Path(__file__).resolve().parent
 ROOT=HERE.parent
+OUTPUT_DIR=(ROOT/'firmware' if (ROOT/'firmware').is_dir() and not (HERE/'roms'/'original').is_dir() else HERE)
 ROMNAMES=('red_u2.bin','green_u3.bin','white_u4.bin')
 ROMHASH=('7ff2ab423b202d3755f8ffbe06c5804412252459ea7434f99c1ba4bce2020e14',
          '78540723234e94119dcac9ffc6a40561abd6d21cac1457739fb1a428f4d0d253',
          '3fa98fd04a6a2cabcae2c99b295f7d42374a4a1602d259771b2e5fbc7576d53a')
-roms=[(ROOT/name).read_bytes() if (ROOT/name).exists() else (HERE/'roms'/'original'/name).read_bytes() for name in ROMNAMES]
+def read_original(name):
+ for path in [ROOT/name,ROOT/'roms'/'original'/name,HERE/'roms'/'original'/name]:
+  if path.exists():return path.read_bytes()
+ raise FileNotFoundError(f'Cannot locate original ROM: {name}')
+roms=[read_original(name) for name in ROMNAMES]
 for b,expected in zip(roms,ROMHASH):
  assert len(b)==4096 and hashlib.sha256(b).hexdigest()==expected, 'Input ROM has changed'
 B=b''.join(roms)
@@ -334,7 +339,7 @@ def generate_source():
      '; Verify with compare_sources.py before burning any EPROM.',
      '']
     full='\n'.join(header+output)
-    (HERE/'LEX31_full_annotated.asm').write_text(full)
+    (OUTPUT_DIR/'LEX31_full_annotated.asm').write_text(full)
 
     # A byte-level audit that uses the actual generated source annotations and verifies
     # every address exactly once, plus disassembler length checks for code.
@@ -349,23 +354,23 @@ def generate_source():
      if re.match(r'\s+DB\b',ln):db_bytes+=len(raw)
      else:inst_bytes+=len(raw);inst_count+=1
     assert not bad and len(defined)==0x3000 and proof==B,(bad,len(defined),proof==B)
-    (HERE/'LEX31_verified_combined.bin').write_bytes(proof)
+    (OUTPUT_DIR/'LEX31_verified_combined.bin').write_bytes(proof)
     # Per-ROM images extracted from reconstructed source for binary comparison
-    for i,n in enumerate(ROMNAMES):(HERE/f'{n[:-4]}_rebuilt.bin').write_bytes(proof[i*4096:(i+1)*4096])
+    for i,n in enumerate(ROMNAMES):(OUTPUT_DIR/f'{n[:-4]}_rebuilt.bin').write_bytes(proof[i*4096:(i+1)*4096])
 
-    with (HERE/'ROM_cross_references.csv').open('w',newline='') as f:
+    with (OUTPUT_DIR/'ROM_cross_references.csv').open('w',newline='') as f:
      w=csv.writer(f);w.writerow(['target','target_label','source','instruction','reachable'])
      for target in sorted(refs):
       for source in sorted(refs[target]):w.writerow([f'{target:04X}',labels.get(target,''),f'{source:04X}',seen[source].asm,'yes'])
-    with (HERE/'ROM_io_references.csv').open('w',newline='') as f:
+    with (OUTPUT_DIR/'ROM_io_references.csv').open('w',newline='') as f:
      w=csv.writer(f);w.writerow(['address','port','direction_or_operand','instruction','qualification'])
      for pc,i in sorted(seen.items()):
       if i.port is not None:w.writerow([f'{pc:04X}',f'{i.port:02X}' if isinstance(i.port,int) else i.port,'read' if i.asm.startswith('IN ') else 'write' if i.asm.startswith('OUT ') else 'unknown',i.asm,'physical decode unresolved'])
-    with (HERE/'ROM_handler_index.csv').open('w',newline='') as f:
+    with (OUTPUT_DIR/'ROM_handler_index.csv').open('w',newline='') as f:
      w=csv.writer(f);w.writerow(['keycode','mode','handler','source_ROM','disassembled_entry'])
      for start,key,mode,addr in command_entries:w.writerow([f'{key:02X}',f'{mode:02X}',f'{addr:04X}',f'U{2+addr//4096}',addr in seen])
 
-    with (HERE/'ROM_RAM_access_index.csv').open('w',newline='') as f:
+    with (OUTPUT_DIR/'ROM_RAM_access_index.csv').open('w',newline='') as f:
      w=csv.writer(f);w.writerow(['instruction_address','referenced_RAM_address','mnemonic','qualification'])
      for pc,ins in sorted(seen.items()):
       for m in re.finditer(r'(?<![\w])([4-7][0-9A-F]{3})h',ins.asm):
@@ -373,7 +378,7 @@ def generate_source():
        if addr>=0x4000:w.writerow([f'{pc:04X}',f'{addr:04X}',ins.asm,'may be pointer constant, verify runtime'])
 
     print(f'ROM bytes: {len(B)}, decoded code bytes: {inst_bytes} ({inst_bytes*100/len(B):.1f}%), undecoded/data bytes {db_bytes}, code instructions {inst_count}, jump destinations {len(refs)}, entrypoints {len(SEEDS)}')
-    print('SHA256',hashlib.sha256(proof).hexdigest());print('Decode issues',len(failures),'first few',failures[:30]);print('Output',HERE/'LEX31_full_annotated.asm')
+    print('SHA256',hashlib.sha256(proof).hexdigest());print('Decode issues',len(failures),'first few',failures[:30]);print('Output',OUTPUT_DIR/'LEX31_full_annotated.asm')
 
 if __name__ == "__main__":
     generate_source()
