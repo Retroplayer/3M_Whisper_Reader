@@ -9,7 +9,7 @@ start_hex,end_exclusive_hex,size_bytes,name,encoding,rom,confidence
 096C,09D6,106,Packed UI phrase dictionary,NUL-separated common phrases,U2,high
 0BBF,0BCC,13,RTC default BCD values,"13-byte initialization record (19h,83h year)",U2,high
 0C1B,0C28,13,RTC register ordering,13 one-byte MM58167 register indexes,U2,high
-0CE2,0D01,31,Clock/calendar editing descriptors,mixed-width field descriptors (still needs complete parser trace),U2,medium
+0CE2,0D00,30,Clock/calendar editing descriptors,mixed-width field descriptors (still needs complete parser trace),U2,medium
 0E48,0E68,32,Clock/alarm screen assembly descriptors,compact presentation data (not entirely decoded),U2,medium
 0E68,0E75,13,Month length lookup,13 bytes (sentinel and 12 BCD lengths),U2,high
 0F7D,10BF,322,OS command-mode dispatch,"29 groups, 88 mode/handler entries",U2/U3,high
@@ -20,4 +20,4 @@ start_hex,end_exclusive_hex,size_bytes,name,encoding,rom,confidence
 1855,185E,9,Configuration row counts,nine counts; sum=17,U3,high
 185E,1891,51,Configuration option descriptors,"17 x (display offset,value text ID,config bit index)",U3,high
 1A75,1A7C,7,PC/PX format-line parser options,two 3-byte option+RAM-pointer triples + NUL,U3,high
-298E,29B0,34,Editor/UI special key text,mixed packed data; needs caller trace,U4,low
+298E,299B,13,Calculator keyboard remap,"count 06, then six (input ASCII, resulting calculator key) pairs",U4,high
