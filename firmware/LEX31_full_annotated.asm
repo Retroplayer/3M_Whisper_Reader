@@ -1698,7 +1698,7 @@ RTC_RESET_AND_INITIALIZE:
     INC HL                                     ; @0B90  23                
     CALL RTC_WRITE_REGISTER                              ; @0B91  CD E3 0B          
 RTC_REFRESH_DISPLAY_VALUES:
-    ; Reads RTC time then formats/refreshes clock display
+    ; Read clock; if current month (4659h) < saved month (4664h, RTC RAM 0Eh), increment year through RTC_INCREMENT_DATE_FIELD in mode 3
     CALL RTC_READ_TIME_BLOCK                              ; @0B94  CD F5 0B          
     LD A,(4664h)                               ; @0B97  3A 64 46          
     LD B,A                                     ; @0B9A  47                
@@ -1710,7 +1710,7 @@ RTC_REFRESH_DISPLAY_VALUES:
     PUSH AF                                    ; @0BA8  F5                
     LD A,03h                                   ; @0BA9  3E 03             
     LD (4008h),A                               ; @0BAB  32 08 40          
-    CALL loc_0D00                              ; @0BAE  CD 00 0D          
+    CALL RTC_INCREMENT_DATE_FIELD                              ; @0BAE  CD 00 0D          
     POP AF                                     ; @0BB1  F1                
     LD (4008h),A                               ; @0BB2  32 08 40          
 loc_0BB5:
@@ -1884,7 +1884,8 @@ loc_0CDC:
     JP loc_0A08                                ; @0CDF  C3 08 0A          
     DB 01h,07h,08h,01h,12h,12h,01h,31h,15h,80h,FFh,1Bh,00h,23h,1Eh,00h ; @0CE2  01 07 08 01 12 12 01 31 15 80 FF 1B 00 23 1E 00
     DB 59h,21h,00h,59h,24h,01h,02h,02h,00h,23h,05h,00h,59h,08h ; @0CF2  59 21 00 59 24 01 02 02 00 23 05 00 59 08   |Y!.Y$....#..Y.|
-loc_0D00:
+RTC_INCREMENT_DATE_FIELD:
+    ; Increment selected BCD clock field; mode 3 increments year 465Bh/465Ch with DAA after December-to-January wrap.
     ; Dispatched for keycode/mode: 86/08
     CALL loc_0D91                              ; @0D00  CD 91 0D          
     JP M,loc_0D0E                              ; @0D03  FA 0E 0D          
@@ -2333,7 +2334,7 @@ ORG 1000h
     DB 03h,1Ah,29h                              ; @1020  03 1A 29   COMMAND 94h mode 03h -> loc_291A
     DB 86h,08h                                  ; @1023  86 08   COMMAND 86h: 8 mode(s)
     DB 00h,16h,21h                              ; @1025  00 16 21   COMMAND 86h mode 00h -> loc_2116
-    DB 08h,00h,0Dh                              ; @1028  08 00 0D   COMMAND 86h mode 08h -> loc_0D00
+    DB 08h,00h,0Dh                              ; @1028  08 00 0D   COMMAND 86h mode 08h -> RTC_INCREMENT_DATE_FIELD
     DB 09h,74h,17h                              ; @102B  09 74 17   COMMAND 86h mode 09h -> loc_1774
     DB 03h,3Eh,1Fh                              ; @102E  03 3E 1F   COMMAND 86h mode 03h -> loc_1F3E
     DB 05h,7Ch,2Ch                              ; @1031  05 7C 2C   COMMAND 86h mode 05h -> loc_2C7C
