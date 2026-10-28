@@ -2342,7 +2342,7 @@ ORG 1000h
 ; ---- green_u3.bin start 1000h ----
 
     DB 6Ch,16h                                  ; @1000  6C 16
-    DB 09h,92h,17h                              ; @1002  09 92 17   COMMAND 8Dh mode 09h -> loc_1792
+    DB 09h,92h,17h                              ; @1002  09 92 17   COMMAND 8Dh mode 09h -> CONFIG_APPLY_OPTION_CHANGE
     DB 8Ah,02h                                  ; @1005  8A 02   COMMAND 8Ah: 2 mode(s)
     DB 00h,09h,1Fh                              ; @1007  00 09 1F   COMMAND 8Ah mode 00h -> loc_1F09
     DB 01h,1Fh,26h                              ; @100A  01 1F 26   COMMAND 8Ah mode 01h -> loc_261F
@@ -2728,7 +2728,9 @@ loc_178E:
     ; Dispatched for keycode/mode: C5/09
     LD A,08h                                   ; @178E  3E 08             
     JR loc_1783                                ; @1790  18 F1             
-loc_1792:
+CONFIG_APPLY_OPTION_CHANGE:
+    ; Move to next displayed value, retrieve descriptor's third byte (config bit index),
+    ; toggle selected retained-RAM bit by CONFIG_BIT_TEST at 1839h, and recalculate XOR checksum at 4657h.
     ; Dispatched for keycode/mode: 8D/09
     POP HL                                     ; @1792  E1                
     LD A,(400Ah)                               ; @1793  3A 0A 40          
