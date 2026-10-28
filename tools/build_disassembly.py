@@ -141,19 +141,19 @@ def decode(pc):
 
 def generate_source():
     # Known literal data regions: no speculative disassembly may cross these.
-    DATA=[(0x0543,0x0565,'DJ_DIAL_STRINGS'),(0x0565,0x063d,'KEYBOARD_TABLES'),(0x0653,0x0659,'LCD_INIT_TABLE'),(0x0f7d,0x10c0,'COMMAND_TABLE')]
+    DATA=[(0x0543,0x0565,'DJ_DIAL_STRINGS'),(0x0565,0x063d,'KEYBOARD_TABLES'),(0x0653,0x0659,'LCD_INIT_TABLE'),(0x0bbf,0x0bcc,'RTC_INIT_BCD_VALUES'),(0x0c1b,0x0c28,'RTC_REGISTER_SEQUENCE'),(0x0f7d,0x10c0,'COMMAND_TABLE')]
     data_mask=set()
     for x,y,_ in DATA:data_mask.update(range(x,y))
     # Known entry points verified in earlier disassembly work, may represent subroutines rather than unique code areas.
     NAMES={
-     0x0000:'RESET_ENTRY',0x0010:'RST10_LOAD_POINTERS',0x0018:'RST18_LCD_SERVICE',0x0020:'RST20_DOCUMENT_POINTERS',0x0028:'RST28_SET_INDICATOR',0x0038:'RST38_COMPARE_HL_DE',
+     0x0000:'RESET_ENTRY',0x002c:'NSC800_RSTC_PERIODIC_VECTOR',0x0034:'NSC800_RSTB_C000_VECTOR',0x0066:'NSC800_NMI_LOCKUP_VECTOR',0x0010:'RST10_LOAD_POINTERS',0x0018:'RST18_LCD_SERVICE',0x0020:'RST20_DOCUMENT_POINTERS',0x0028:'RST28_SET_INDICATOR',0x0038:'RST38_COMPARE_HL_DE',
      0x00e3:'OS_MAIN_LOOP',0x017e:'PERIODIC_SERVICE',0x01e7:'AUX_OUTPUT_SERVICE',0x0214:'AUX_SEND_CHAR',0x0238:'OS_COMMAND_LOOKUP',
      0x0288:'QUEUE_HANDLER_A',0x02d8:'QUEUE_HANDLER_B',0x035a:'KEY_SCAN',0x03aa:'KEY_TABLE_INDEX',0x03c6:'KEY_TRANSLATE_EVENT',
      0x04c1:'DJ_ALT_SHORTCUT',0x04c6:'DJ_SHORTCUT',0x063d:'LCD_INIT_START',0x069e:'LCD_CHAR_OUTPUT',
      0x0742:'LCD_READ',0x0755:'LCD_TRANSLATE_OUTPUT',0x0760:'LCD_COMMAND',0x076c:'LCD_CONTROL_SHADOW',0x077d:'LCD_TRANSLATION',
      0x0867:'LCD_MAIN_INIT',0x0885:'LCD_WAIT_READY',0x0896:'LCD_PATTERN_LOAD',0x0a34:'STATUS_SET_MASK',0x0a4a:'STATUS_CLEAR_MASK',
      0x0a77:'STATUS_REFRESH_DOCUMENTS',0x0a9a:'STATUS_REFRESH_ALL',0x0af2:'OUTPUT_MODE_KEY',0x0b0c:'AUX_QUEUE_OUTPUT',0x0b46:'AUX_OUTPUT_STRING',0x0b5d:'AUX_OUTPUT_RULE',
-     0x0f11:'STATUS_DIRECTION_INDICATOR',0x18a9:'SERIAL_RECEIVE_SERVICE',0x18ab:'SERIAL_READ_STATUS',0x18dc:'SERIAL_READ_CHAR',
+     0x0b6c:'RTC_RESET_AND_INITIALIZE',0x0b94:'RTC_REFRESH_DISPLAY_VALUES',0x0bcc:'RTC_READ_REGISTER',0x0bdb:'RTC_END_ACCESS',0x0be3:'RTC_WRITE_REGISTER',0x0bed:'RTC_SELECT_BANK',0x0bf5:'RTC_READ_TIME_BLOCK',0x0c28:'RTC_WRITE_TIME_BLOCK',0x0c2c:'RTC_WRITE_FIELDS',0x0f11:'STATUS_DIRECTION_INDICATOR',0x18a9:'SERIAL_RECEIVE_SERVICE',0x18ab:'SERIAL_READ_STATUS',0x18dc:'SERIAL_READ_CHAR',
      0x1932:'SERIAL_XOFF_PATH',0x1c13:'TX_DEQUEUE',0x1c98:'SERIAL_SEND_CHAR',0x1ccc:'DOCUMENT_TX_INIT',
      0x1d14:'DOCUMENT_DIRECTORY_LOOKUP',0x1d32:'DIRECTORY_READ_ENTRY',0x1e80:'DOCUMENT_POOL_INIT',0x1f5f:'DIRECTORY_INDEX_TO_ADDRESS',
      0x21df:'AUX_OUTPUT_MEMORY',0x24b0:'EDITOR_UPDATE_POSITION',
@@ -171,7 +171,7 @@ def generate_source():
     assert pos==0x10bf and B[pos]==0 and len(command_entries)==88,(hex(pos),len(command_entries))
 
     SEEDS=set(range(0,0x40,8)) | {v for v in NAMES if v<0x3000} | {h for _,_,_,h in command_entries}
-    SEEDS|={0x1fe5,0x0c6b,0x00f2} # direct special routes
+    SEEDS|={0x1fe5,0x0c6b,0x00f2,0x002c,0x0034,0x0066} # direct special routes
     SEEDS={v for v in SEEDS if v not in data_mask}
 
     # Recursive code discovery, protect already-discovered instructions and known data.
@@ -210,13 +210,19 @@ def generate_source():
      0x0000:'CPU reset entry; U2 appears mapped at 0000h',
      0x0002:'Early output to port 47h (shared display/keyboard control)',
      0x000b:'Stack pointer set to 4800h; OS working-RAM layout must be reviewed for conflicts',
+     0x007e:'Write 06h to NSC800 internal interrupt control at BBh: enables RSTC and RSTB, masks RSTA/INTR',
+     0x0180:'Write 00h to NSC800 internal interrupt control at BBh: masks all sources during service',
+     0x021f:'Write 06h to NSC800 internal interrupt control at BBh: re-enable RSTC and RSTB',
      0x0010:'RST 10h loads HL and DE from saved OS pointers',
      0x0020:'RST 20h retrieves document-memory pointers',
      0x0028:'RST 28h enters 16-bit status-mask set function',
+     0x002c:'NSC800 RSTC vector (002Ch) jumps to 017Eh periodic service; enabled by OUT (BBh),06h',
+     0x0034:'NSC800 RSTB vector (0034h) jumps to C000h; enabled by OUT (BBh),06h; destination external/banked UNKNOWN',
+     0x0066:'NSC800 NMI vector (0066h) loops to itself; NMI is not serviceable in this firmware configuration',
      0x0038:'RST 38h performs 16-bit compare, not a conventional IRQ handler',
      0x00e8:'Resolve keycode and mode into handler pointer in HL',
      0x00f1:'Dispatcher performs computed JP (HL); no general-purpose RAM loader proven',
-     0x017e:'Periodic service: scans keyboard, polls communications, updates status and timer; source IRQ not identified',
+     0x017e:'RSTC interrupt service: disables CPU interrupts via BBh=00, services keyboard/serial/timers then restores BBh=06; source not traced',
      0x0238:'Mode-dependent command lookup, data table at 0F7Dh (crosses U2/U3 boundary)',
      0x035a:'Keyboard scan; port 47h is shared with display control',
      0x04c1:'DJ variant: alters communications flag then enters common shortcut',
@@ -231,12 +237,21 @@ def generate_source():
      0x0a77:'Document count at 4593h governs mask 0008h; candidate MEMORY indicator',
      0x0a9a:'Periodic refresh of firmware status indicators',
      0x0b5d:'40 ASCII hyphens and CR emitted to auxiliary channel: printer-style formatting',
+     0x0b6c:'RTC initialization: read interrupt status at 4010h, disable interrupts at 4011h, reset counters/RAM at 4012h/4013h, write time and GO at 4015h',
+     0x0b94:'Reads RTC time then formats/refreshes clock display',
+     0x0bcc:'MM58167 RTC register READ (HL=4000h+register): switches bus, reads, polls 4014h bit0 for rollover, restores bank and EI',
+     0x0bdb:'Restore original port 47h bus control, enable interrupts, return RTC byte in A',
+     0x0be3:'MM58167 RTC register WRITE (HL=4000h+register, B=value): briefly select bus then write, restore bus',
+     0x0bed:'Save port 47h shadow from 4000h, OR 40h to enable RTC address window, mask interrupts during transaction',
+     0x0bf5:'Read 13 RTC registers specified at 0C1Bh into buffer 4658h; mixed counters and alarm RAM',
+     0x0c28:'Write clock data from RAM buffer to RTC using table at 0C1Bh',
+     0x0c2c:'Common RTC write loop through register-address table',
      0x18ab:'Communications status poll, port 5Fh; UART electrical mapping not verified',
      0x1ccc:'Document transfer setup: loads data pointer and length from directory entry',
      0x1e80:'Initialize document pool at 4800h and compute usable RAM size',
     }
     # Special table/data descriptions for readable source, also includes true byte layout.
-    DATA_LABELS={0x0543:'DJ_SCRIPT_DATA',0x0565:'KB_NORMAL_TABLE',0x05ad:'KB_ALT_TABLE',0x05f5:'KB_SHIFT_TABLE',0x0653:'LCD_INIT_COMMANDS',0x0f7d:'COMMAND_DISPATCH_TABLE',0x10bf:'COMMAND_TABLE_TERMINATOR'}
+    DATA_LABELS={0x0543:'DJ_SCRIPT_DATA',0x0565:'KB_NORMAL_TABLE',0x05ad:'KB_ALT_TABLE',0x05f5:'KB_SHIFT_TABLE',0x0653:'LCD_INIT_COMMANDS',0x0bbf:'RTC_INITIAL_VALUES',0x0c1b:'RTC_REGISTER_LIST',0x0f7d:'COMMAND_DISPATCH_TABLE',0x10bf:'COMMAND_TABLE_TERMINATOR'}
     # Subdivide packed command table into readable entries, and keyboard map into scan rows.
     groupstarts={}
     modestarts={}
@@ -254,6 +269,8 @@ def generate_source():
      0x05ad:'Second keycode layer: 72 entries',
      0x05f5:'Third keycode layer: 72 entries',
      0x0653:'HD44780 command table; original 34h,34h,01h,06h,0Eh,00h',
+     0x0bbf:'13-byte default BCD data values for MM58167 registers, copied through 0C2Ch',
+     0x0c1b:'13 MM58167 register offsets: 05 07 06 0A 09 04 03 02 0F 0C 0B 0D 0E',
      0x0f7d:'Packed keycode/mode/target records; U2/U3 boundary bisects this table',
      0x10bf:'Zero terminator for 29 groups and 88 command-mode mappings',
     }
@@ -321,13 +338,19 @@ def generate_source():
      '; independent assembly by a third-party Z80 assembler has not yet been run.',
      '; Hardware labels identify firmware behavior, not connector/pin assignments.',
      '',
-     'PORT_LCD_CONTROL       EQU 047h  ; shared with keyboard scanner',
+     'PORT_LCD_CONTROL       EQU 047h  ; shared with keyboard scanner and RTC bank switch (bit 6)',
+     'RTC_WINDOW_BASE        EQU 04000h ; MM58167 5-bit registers visible while port 47h bit 6 is asserted',
+     'RTC_REG_IRQ_STATUS     EQU 04010h ; reading acknowledges MM58167 interrupt',
+     'RTC_REG_IRQ_CONTROL    EQU 04011h ; interrupt enable mask',
+     'RTC_REG_ROLLOVER       EQU 04014h ; bit 0 set when clock rolled over during read',
+     'RTC_REG_GO             EQU 04015h ; restart clock counters',
      'PORT_LCD_READ          EQU 04Bh  ; HD44780 busy/data read candidate',
      'PORT_STATUS_HI         EQU 04Fh  ; shadow 4007h',
      'PORT_STATUS_LO         EQU 053h  ; shadow 4006h',
      'PORT_COMM_DATA         EQU 05Bh  ; firmware communication byte',
      'PORT_COMM_STATUS       EQU 05Fh  ; communications status/control',
      'PORT_AUX_OUTPUT        EQU 0D7h  ; printer-style output; DB-37 not confirmed',
+     'PORT_NS800_ICR          EQU 0BBh  ; CPU internal interrupt control register: bit1 RSTC, bit2 RSTB',
      'RAM_STATUS_LO_SHADOW   EQU 04006h',
      'RAM_STATUS_HI_SHADOW   EQU 04007h',
      'RAM_COMMAND_MODE       EQU 04507h',

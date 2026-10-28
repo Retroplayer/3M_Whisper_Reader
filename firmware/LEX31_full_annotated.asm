@@ -8,13 +8,19 @@
 ; independent assembly by a third-party Z80 assembler has not yet been run.
 ; Hardware labels identify firmware behavior, not connector/pin assignments.
 
-PORT_LCD_CONTROL       EQU 047h  ; shared with keyboard scanner
+PORT_LCD_CONTROL       EQU 047h  ; shared with keyboard scanner and RTC bank switch (bit 6)
+RTC_WINDOW_BASE        EQU 04000h ; MM58167 5-bit registers visible while port 47h bit 6 is asserted
+RTC_REG_IRQ_STATUS     EQU 04010h ; reading acknowledges MM58167 interrupt
+RTC_REG_IRQ_CONTROL    EQU 04011h ; interrupt enable mask
+RTC_REG_ROLLOVER       EQU 04014h ; bit 0 set when clock rolled over during read
+RTC_REG_GO             EQU 04015h ; restart clock counters
 PORT_LCD_READ          EQU 04Bh  ; HD44780 busy/data read candidate
 PORT_STATUS_HI         EQU 04Fh  ; shadow 4007h
 PORT_STATUS_LO         EQU 053h  ; shadow 4006h
 PORT_COMM_DATA         EQU 05Bh  ; firmware communication byte
 PORT_COMM_STATUS       EQU 05Fh  ; communications status/control
 PORT_AUX_OUTPUT        EQU 0D7h  ; printer-style output; DB-37 not confirmed
+PORT_NS800_ICR          EQU 0BBh  ; CPU internal interrupt control register: bit1 RSTC, bit2 RSTB
 RAM_STATUS_LO_SHADOW   EQU 04006h
 RAM_STATUS_HI_SHADOW   EQU 04007h
 RAM_COMMAND_MODE       EQU 04507h
@@ -60,10 +66,18 @@ RST20_DOCUMENT_POINTERS:
 RST28_SET_INDICATOR:
     ; RST 28h enters 16-bit status-mask set function
     JP STATUS_SET_MASK                         ; @0028  C3 34 0A          
-    DB FFh,C3h,7Eh,01h,FFh                      ; @002B  FF C3 7E 01 FF
+    DB FFh                                      ; @002B  FF
+NSC800_RSTC_PERIODIC_VECTOR:
+    ; NSC800 RSTC vector (002Ch) jumps to 017Eh periodic service; enabled by OUT (BBh),06h
+    JP PERIODIC_SERVICE                        ; @002C  C3 7E 01          
+    DB FFh                                      ; @002F  FF
 loc_0030:
     JR loc_003E                                ; @0030  18 0C             
-    DB FFh,FFh,C3h,00h,C0h,FFh                  ; @0032  FF FF C3 00 C0 FF
+    DB FFh,FFh                                  ; @0032  FF FF
+NSC800_RSTB_C000_VECTOR:
+    ; NSC800 RSTB vector (0034h) jumps to C000h; enabled by OUT (BBh),06h; destination external/banked UNKNOWN
+    JP C000h                                   ; @0034  C3 00 C0          
+    DB FFh                                      ; @0037  FF
 RST38_COMPARE_HL_DE:
     ; RST 38h performs 16-bit compare, not a conventional IRQ handler
     LD A,D                                     ; @0038  7A                
@@ -104,7 +118,10 @@ loc_005A:
     LD (DE),A                                  ; @0062  12                
     INC DE                                     ; @0063  13                
     RET                                        ; @0064  C9                
-    DB FFh,C3h,66h,00h                          ; @0065  FF C3 66 00
+    DB FFh                                      ; @0065  FF
+NSC800_NMI_LOCKUP_VECTOR:
+    ; NSC800 NMI vector (0066h) loops to itself; NMI is not serviceable in this firmware configuration
+    JP NSC800_NMI_LOCKUP_VECTOR                ; @0066  C3 66 00          
 loc_0069:
     LD BC,1CE8h                                ; @0069  01 E8 1C          
 loc_006C:
@@ -118,7 +135,7 @@ loc_006C:
     LDDR                                       ; @0078  ED B8             
     IN A,(63h)                                 ; @007A  DB 63             
     LD A,06h                                   ; @007C  3E 06             
-    OUT (BBh),A                                ; @007E  D3 BB             
+    OUT (BBh),A                                ; @007E  D3 BB               Write 06h to NSC800 interrupt control: enable RSTC/RSTB             
     LD HL,C0FFh                                ; @0080  21 FF C0          
     LD (44AFh),HL                              ; @0083  22 AF 44          
     LD (4466h),HL                              ; @0086  22 66 44          
@@ -270,10 +287,10 @@ loc_016F:
     OUT (63h),A                                ; @017B  D3 63             
     RET                                        ; @017D  C9                
 PERIODIC_SERVICE:
-    ; Periodic service: scans keyboard, polls communications, updates status and timer; source IRQ not identified
+    ; RSTC interrupt service: disables CPU interrupts via BBh=00, services keyboard/serial/timers then restores BBh=06; source not traced
     PUSH AF                                    ; @017E  F5                
     XOR A                                      ; @017F  AF                
-    OUT (BBh),A                                ; @0180  D3 BB             
+    OUT (BBh),A                                ; @0180  D3 BB               Write 00h to NSC800 interrupt control: mask all sources             
     PUSH BC                                    ; @0182  C5                
     PUSH DE                                    ; @0183  D5                
     PUSH HL                                    ; @0184  E5                
@@ -371,7 +388,7 @@ loc_0218:
     POP BC                                     ; @021A  C1                
     IN A,(63h)                                 ; @021B  DB 63             
     LD A,06h                                   ; @021D  3E 06             
-    OUT (BBh),A                                ; @021F  D3 BB             
+    OUT (BBh),A                                ; @021F  D3 BB               Write 06h to NSC800 interrupt control: re-enable RSTC/RSTB             
     POP AF                                     ; @0221  F1                
     EI                                         ; @0222  FB                
     RET                                        ; @0223  C9                
@@ -1560,7 +1577,7 @@ loc_0ABF:
     OR A                                       ; @0ADD  B7                
     RET NZ                                     ; @0ADE  C0                
     LD HL,4002h                                ; @0ADF  21 02 40          
-    CALL loc_0BCC                              ; @0AE2  CD CC 0B          
+    CALL RTC_READ_REGISTER                              ; @0AE2  CD CC 0B          
     AND 0Fh                                    ; @0AE5  E6 0F             
     RET NZ                                     ; @0AE7  C0                
     INC A                                      ; @0AE8  3C                
@@ -1661,26 +1678,28 @@ loc_0B60:
     POP BC                                     ; @0B67  C1                
     LD A,0Dh                                   ; @0B68  3E 0D             
     JR AUX_QUEUE_OUTPUT                        ; @0B6A  18 A0             
-loc_0B6C:
+RTC_RESET_AND_INITIALIZE:
+    ; RTC initialization: read interrupt status at 4010h, disable interrupts at 4011h, reset counters/RAM at 4012h/4013h, write time and GO at 4015h
     LD HL,4010h                                ; @0B6C  21 10 40          
-    CALL loc_0BCC                              ; @0B6F  CD CC 0B          
+    CALL RTC_READ_REGISTER                              ; @0B6F  CD CC 0B          
     INC HL                                     ; @0B72  23                
     LD B,00h                                   ; @0B73  06 00             
-    CALL loc_0BE3                              ; @0B75  CD E3 0B          
+    CALL RTC_WRITE_REGISTER                              ; @0B75  CD E3 0B          
     DEC B                                      ; @0B78  05                
     INC HL                                     ; @0B79  23                
-    CALL loc_0BE3                              ; @0B7A  CD E3 0B          
+    CALL RTC_WRITE_REGISTER                              ; @0B7A  CD E3 0B          
     INC HL                                     ; @0B7D  23                
-    CALL loc_0BE3                              ; @0B7E  CD E3 0B          
+    CALL RTC_WRITE_REGISTER                              ; @0B7E  CD E3 0B          
     LD IX,0BBFh                                ; @0B81  DD 21 BF 0B       
-    CALL loc_0C2C                              ; @0B85  CD 2C 0C          
+    CALL RTC_WRITE_FIELDS                              ; @0B85  CD 2C 0C          
     LD HL,4015h                                ; @0B88  21 15 40          
-    CALL loc_0BE3                              ; @0B8B  CD E3 0B          
+    CALL RTC_WRITE_REGISTER                              ; @0B8B  CD E3 0B          
     LD B,00h                                   ; @0B8E  06 00             
     INC HL                                     ; @0B90  23                
-    CALL loc_0BE3                              ; @0B91  CD E3 0B          
-loc_0B94:
-    CALL loc_0BF5                              ; @0B94  CD F5 0B          
+    CALL RTC_WRITE_REGISTER                              ; @0B91  CD E3 0B          
+RTC_REFRESH_DISPLAY_VALUES:
+    ; Reads RTC time then formats/refreshes clock display
+    CALL RTC_READ_TIME_BLOCK                              ; @0B94  CD F5 0B          
     LD A,(4664h)                               ; @0B97  3A 64 46          
     LD B,A                                     ; @0B9A  47                
     LD A,(4659h)                               ; @0B9B  3A 59 46          
@@ -1698,13 +1717,15 @@ loc_0BB5:
     CALL NC,loc_0E75                           ; @0BB5  D4 75 0E          
     LD A,(44F9h)                               ; @0BB8  3A F9 44          
     OR A                                       ; @0BBB  B7                
-    JR NZ,loc_0C28                             ; @0BBC  20 6A             
+    JR NZ,RTC_WRITE_TIME_BLOCK                             ; @0BBC  20 6A             
     RET                                        ; @0BBE  C9                
+RTC_INITIAL_VALUES:  ; 13-byte default BCD data values for MM58167 registers, copied through 0C2Ch
     DB 07h,01h,01h,19h,83h,00h,00h,00h,01h,00h,00h,00h,01h ; @0BBF  07 01 01 19 83 00 00 00 01 00 00 00 01
-loc_0BCC:
+RTC_READ_REGISTER:
+    ; MM58167 RTC register READ (HL=4000h+register): switches bus, reads, polls 4014h bit0 for rollover, restores bank and EI
     PUSH DE                                    ; @0BCC  D5                
     PUSH BC                                    ; @0BCD  C5                
-    CALL loc_0BED                              ; @0BCE  CD ED 0B          
+    CALL RTC_SELECT_BANK                              ; @0BCE  CD ED 0B          
     OUT (47h),A                                ; @0BD1  D3 47             
     LD DE,4014h                                ; @0BD3  11 14 40          
 loc_0BD6:
@@ -1712,7 +1733,8 @@ loc_0BD6:
     LD A,(DE)                                  ; @0BD7  1A                
     RRCA                                       ; @0BD8  0F                
     JR C,loc_0BD6                              ; @0BD9  38 FB             
-loc_0BDB:
+RTC_END_ACCESS:
+    ; Restore original port 47h bus control, enable interrupts, return RTC byte in A
     LD A,C                                     ; @0BDB  79                
     OUT (47h),A                                ; @0BDC  D3 47             
     EI                                         ; @0BDE  FB                
@@ -1720,20 +1742,23 @@ loc_0BDB:
     POP BC                                     ; @0BE0  C1                
     POP DE                                     ; @0BE1  D1                
     RET                                        ; @0BE2  C9                
-loc_0BE3:
+RTC_WRITE_REGISTER:
+    ; MM58167 RTC register WRITE (HL=4000h+register, B=value): briefly select bus then write, restore bus
     PUSH DE                                    ; @0BE3  D5                
     PUSH BC                                    ; @0BE4  C5                
-    CALL loc_0BED                              ; @0BE5  CD ED 0B          
+    CALL RTC_SELECT_BANK                              ; @0BE5  CD ED 0B          
     OUT (47h),A                                ; @0BE8  D3 47             
     LD (HL),B                                  ; @0BEA  70                
-    JR loc_0BDB                                ; @0BEB  18 EE             
-loc_0BED:
+    JR RTC_END_ACCESS                                ; @0BEB  18 EE             
+RTC_SELECT_BANK:
+    ; Save port 47h shadow from 4000h, OR 40h to enable RTC address window, mask interrupts during transaction
     DI                                         ; @0BED  F3                
     LD A,(4000h)                               ; @0BEE  3A 00 40          
     LD C,A                                     ; @0BF1  4F                
     OR 40h                                     ; @0BF2  F6 40             
     RET                                        ; @0BF4  C9                
-loc_0BF5:
+RTC_READ_TIME_BLOCK:
+    ; Read 13 RTC registers specified at 0C1Bh into buffer 4658h; mixed counters and alarm RAM
     LD DE,0C1Bh                                ; @0BF5  11 1B 0C          
     LD B,0Dh                                   ; @0BF8  06 0D             
     LD IX,4658h                                ; @0BFA  DD 21 58 46       
@@ -1742,7 +1767,7 @@ loc_0BFE:
     INC DE                                     ; @0BFF  13                
     LD H,40h                                   ; @0C00  26 40             
     LD L,A                                     ; @0C02  6F                
-    CALL loc_0BCC                              ; @0C03  CD CC 0B          
+    CALL RTC_READ_REGISTER                              ; @0C03  CD CC 0B          
     LD (IX+0),A                                ; @0C06  DD 77 00          
     INC IX                                     ; @0C09  DD 23             
     DJNZ loc_0BFE                              ; @0C0B  10 F1             
@@ -1753,10 +1778,13 @@ loc_0BFE:
     LD H,29h                                   ; @0C15  26 29             
     LD (4659h),HL                              ; @0C17  22 59 46          
     RET                                        ; @0C1A  C9                
+RTC_REGISTER_LIST:  ; 13 MM58167 register offsets: 05 07 06 0A 09 04 03 02 0F 0C 0B 0D 0E
     DB 05h,07h,06h,0Ah,09h,04h,03h,02h,0Fh,0Ch,0Bh,0Dh,0Eh ; @0C1B  05 07 06 0A 09 04 03 02 0F 0C 0B 0D 0E
-loc_0C28:
+RTC_WRITE_TIME_BLOCK:
+    ; Write clock data from RAM buffer to RTC using table at 0C1Bh
     LD IX,4658h                                ; @0C28  DD 21 58 46       
-loc_0C2C:
+RTC_WRITE_FIELDS:
+    ; Common RTC write loop through register-address table
     LD A,(4659h)                               ; @0C2C  3A 59 46          
     LD (4664h),A                               ; @0C2F  32 64 46          
     LD DE,2902h                                ; @0C32  11 02 29          
@@ -1786,7 +1814,7 @@ loc_0C45:
     XOR A                                      ; @0C5C  AF                
     LD (4011h),A                               ; @0C5D  32 11 40          
 loc_0C60:
-    CALL loc_0BE3                              ; @0C60  CD E3 0B          
+    CALL RTC_WRITE_REGISTER                              ; @0C60  CD E3 0B          
     POP BC                                     ; @0C63  C1                
     DJNZ loc_0C45                              ; @0C64  10 DF             
     XOR A                                      ; @0C66  AF                
@@ -1827,7 +1855,7 @@ loc_0CA2:
     CALL loc_07E6                              ; @0CA7  CD E6 07          
     XOR A                                      ; @0CAA  AF                
     LD (44F9h),A                               ; @0CAB  32 F9 44          
-    CALL loc_0B94                              ; @0CAE  CD 94 0B          
+    CALL RTC_REFRESH_DISPLAY_VALUES                              ; @0CAE  CD 94 0B          
     CALL loc_0DC6                              ; @0CB1  CD C6 0D          
     CALL loc_0878                              ; @0CB4  CD 78 08          
     CALL loc_09D9                              ; @0CB7  CD D9 09          
@@ -1847,7 +1875,7 @@ loc_0CD4:
     ; Dispatched for keycode/mode: 8E/08
     LD A,(44F9h)                               ; @0CD4  3A F9 44          
     OR A                                       ; @0CD7  B7                
-    CALL NZ,loc_0C28                           ; @0CD8  C4 28 0C          
+    CALL NZ,RTC_WRITE_TIME_BLOCK                           ; @0CD8  C4 28 0C          
 loc_0CDB:
     ; Dispatched for keycode/mode: 8E/02, 8E/03, 8E/05
     POP HL                                     ; @0CDB  E1                
@@ -1984,7 +2012,7 @@ loc_0DB7:
 loc_0DBF:
     XOR A                                      ; @0DBF  AF                
     LD (4008h),A                               ; @0DC0  32 08 40          
-    CALL loc_0B94                              ; @0DC3  CD 94 0B          
+    CALL RTC_REFRESH_DISPLAY_VALUES                              ; @0DC3  CD 94 0B          
 loc_0DC6:
     CALL loc_0DAF                              ; @0DC6  CD AF 0D          
     LD IY,0E48h                                ; @0DC9  FD 21 48 0E       
@@ -2200,11 +2228,11 @@ loc_0F35:
     LD (466Eh),HL                              ; @0F39  22 6E 46          
     LD A,H                                     ; @0F3C  7C                
     OR L                                       ; @0F3D  B5                
-    CALL Z,loc_0B94                            ; @0F3E  CC 94 0B          
+    CALL Z,RTC_REFRESH_DISPLAY_VALUES                            ; @0F3E  CC 94 0B          
     LD A,(4660h)                               ; @0F41  3A 60 46          
     DEC A                                      ; @0F44  3D                
     RET Z                                      ; @0F45  C8                
-    CALL loc_0B94                              ; @0F46  CD 94 0B          
+    CALL RTC_REFRESH_DISPLAY_VALUES                              ; @0F46  CD 94 0B          
     LD DE,4661h                                ; @0F49  11 61 46          
     LD HL,465Dh                                ; @0F4C  21 5D 46          
     LD B,02h                                   ; @0F4F  06 02             
@@ -2217,7 +2245,7 @@ loc_0F51:
     DJNZ loc_0F51                              ; @0F56  10 F9             
     INC HL                                     ; @0F58  23                
     LD (HL),01h                                ; @0F59  36 01             
-    CALL loc_0C28                              ; @0F5B  CD 28 0C          
+    CALL RTC_WRITE_TIME_BLOCK                              ; @0F5B  CD 28 0C          
     CALL loc_07E6                              ; @0F5E  CD E6 07          
     LD HL,11BAh                                ; @0F61  21 BA 11          
     CALL loc_003F                              ; @0F64  CD 3F 00          
@@ -3718,7 +3746,7 @@ loc_1E9B:
     CALL loc_181C                              ; @1E9B  CD 1C 18          
     LD HL,464Dh                                ; @1E9E  21 4D 46          
     CALL loc_2DB4                              ; @1EA1  CD B4 2D          
-    CALL loc_0B6C                              ; @1EA4  CD 6C 0B          
+    CALL RTC_RESET_AND_INITIALIZE                              ; @1EA4  CD 6C 0B          
     LD HL,4611h                                ; @1EA7  21 11 46          
     LD BC,3CA0h                                ; @1EAA  01 A0 3C          
 loc_1EAD:
@@ -4149,7 +4177,7 @@ loc_2192:
     RET Z                                      ; @2196  C8                
     JP loc_2161                                ; @2197  C3 61 21          
 loc_219A:
-    CALL loc_0BF5                              ; @219A  CD F5 0B          
+    CALL RTC_READ_TIME_BLOCK                              ; @219A  CD F5 0B          
     LD A,(465Fh)                               ; @219D  3A 5F 46          
     LD (44F7h),A                               ; @21A0  32 F7 44          
     JP STATUS_DIRECTION_INDICATOR              ; @21A3  C3 11 0F          
