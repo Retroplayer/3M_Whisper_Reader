@@ -47,3 +47,21 @@ The original H2572 is a 40×1 HD44780 display. An HD44780-compatible single-enab
 ## Project rules
 
 Preserve original EPROM dumps unchanged. Keep factory-confirmed, byte-verified and hypothesized conclusions distinct. Do not assign DB-37 pin functions or claim a RAM program loader without physical or firmware evidence.
+
+
+## Annotated firmware source and reproducible builds
+
+- [Master annotated disassembly](firmware/LEX31_full_annotated.asm): all 12,288 ROM bytes represented as traced instructions or explicit data. 4,617 instruction starts currently discovered; unresolved code/data remains clearly marked.
+- [Original ROMs](roms/original/): untouched red U2, green U3, and white U4 EPROM dumps.
+- [Disassembly generator](tools/build_disassembly.py): reconstructs labels, code/data and cross-reference tables from the originals.
+- [Source reassembler](tools/assemble_source.py): specialized source-to-ROM rebuild verifier, not a full generic Z80 assembler.
+
+From the repository root, with Python 3:
+
+```sh
+python3 tools/assemble_source.py
+# Regenerate working disassembly from the ROMs (overwrites generated firmware source):
+python3 tools/build_disassembly.py
+```
+
+The reassembler has been tested to reproduce the three factory EPROM images **byte-for-byte**. Hand-edited source should be kept on a branch or in a separate file before regenerating. The single-enable 40×2 LCD initialization experiment changes only the two `34h` bytes at `LCD_INIT_COMMANDS` (`0653h` and `0654h`) to `38h`; it is not hardware-tested and does not add a two-line editor. The project source package supplied in the ChatGPT restoration conversation includes this test image and further research notes.
