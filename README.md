@@ -72,3 +72,16 @@ The reassembler has been tested to reproduce the three factory EPROM images **by
 The firmware's SEND / CTL+SEND / SAVE and \`PC\`/\`PX\` controls are traced in [document transfer analysis](docs/document_transfer.md). Important verified entry points: \`1973h\` literal-send bypass, \`1978h\` regular SEND, \`1A29h\` FORMAT-line parser, \`1A75h\` \`PC\`/\`PX\` RAM-variable table, \`1A7Ch\` SAVE toggle, and \`1B1Fh\` saved-line append. A 24-signature [ROM regression checker](tools/verify_transfer.py) validates these references against the original dumps. Run with \`python3 tools/verify_transfer.py\`.
 
 This knowledge is integrated into [the annotated disassembly](firmware/LEX31_full_annotated.asm) and the [disassembly generator](tools/build_disassembly.py). Normal SEND and literal SEND deliberately use different source pointer/count pairs but share the same low-level output driver.
+
+
+## Firmware-wide kernel and hardware audit (October 2026)
+
+- [Kernel, I/O hardware, memory map and modifiable ROM tables](docs/kernel_hardware_audit.md)
+- [Complete immediate I/O instruction cross-references](docs/hardware_io_xrefs.csv): 51 accesses across 11 port addresses (including NSC800's internal BBh)
+- [ROM table atlas](docs/rom_table_atlas.csv): 22 explicitly identified data intervals, with boundaries and confidence
+- [Configuration descriptor and RAM-bit index](docs/configuration_fields.csv): all 17 configurable fields in nine menu groups
+- [Reproducible ROM audit script](tools/audit_rom_tables.py)
+
+The discovered option-descriptor table is at \`1855h–1890h\` and the config editor changes stored bits at \`4654h–4656h\` through \`1792h\`, then updates a retained-RAM XOR checksum at \`4657h\`. Original 40×1 LCD initialization includes four custom CGRAM patterns, and temporary screen save/restore assumes 40 cells; both require specific work for the planned 40×2 display.
+
+Rebuild the CSV indexes using \`python3 tools/audit_rom_tables.py\`. All physical hardware pin mappings, expansion memory decoding, and RAM-code loading remain work in progress; do not treat this software audit as a board schematic.
