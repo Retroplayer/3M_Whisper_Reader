@@ -141,7 +141,7 @@ def decode(pc):
 
 def generate_source():
     # Known literal data regions: no speculative disassembly may cross these.
-    DATA=[(0x0543,0x0565,'DJ_DIAL_STRINGS'),(0x0565,0x063d,'KEYBOARD_TABLES'),(0x0653,0x0659,'LCD_INIT_TABLE'),(0x0bbf,0x0bcc,'RTC_INIT_BCD_VALUES'),(0x0c1b,0x0c28,'RTC_REGISTER_SEQUENCE'),(0x0f7d,0x10c0,'COMMAND_TABLE')]
+    DATA=[(0x0543,0x0565,'DJ_DIAL_STRINGS'),(0x0565,0x063d,'KEYBOARD_TABLES'),(0x0653,0x0659,'LCD_INIT_TABLE'),(0x0bbf,0x0bcc,'RTC_INIT_BCD_VALUES'),(0x0c1b,0x0c28,'RTC_REGISTER_SEQUENCE'),(0x0e68,0x0e75,'MONTH_LENGTH_TABLE'),(0x0f7d,0x10c0,'COMMAND_TABLE')]
     data_mask=set()
     for x,y,_ in DATA:data_mask.update(range(x,y))
     # Known entry points verified in earlier disassembly work, may represent subroutines rather than unique code areas.
@@ -153,7 +153,7 @@ def generate_source():
      0x0742:'LCD_READ',0x0755:'LCD_TRANSLATE_OUTPUT',0x0760:'LCD_COMMAND',0x076c:'LCD_CONTROL_SHADOW',0x077d:'LCD_TRANSLATION',
      0x0867:'LCD_MAIN_INIT',0x0885:'LCD_WAIT_READY',0x0896:'LCD_PATTERN_LOAD',0x0a34:'STATUS_SET_MASK',0x0a4a:'STATUS_CLEAR_MASK',
      0x0a77:'STATUS_REFRESH_DOCUMENTS',0x0a9a:'STATUS_REFRESH_ALL',0x0af2:'OUTPUT_MODE_KEY',0x0b0c:'AUX_QUEUE_OUTPUT',0x0b46:'AUX_OUTPUT_STRING',0x0b5d:'AUX_OUTPUT_RULE',
-     0x0b6c:'RTC_RESET_AND_INITIALIZE',0x0b94:'RTC_REFRESH_DISPLAY_VALUES',0x0bcc:'RTC_READ_REGISTER',0x0bdb:'RTC_END_ACCESS',0x0be3:'RTC_WRITE_REGISTER',0x0bed:'RTC_SELECT_BANK',0x0bf5:'RTC_READ_TIME_BLOCK',0x0c28:'RTC_WRITE_TIME_BLOCK',0x0c2c:'RTC_WRITE_FIELDS',0x0f11:'STATUS_DIRECTION_INDICATOR',0x18a9:'SERIAL_RECEIVE_SERVICE',0x18ab:'SERIAL_READ_STATUS',0x18dc:'SERIAL_READ_CHAR',
+     0x0b6c:'RTC_RESET_AND_INITIALIZE',0x0b94:'RTC_REFRESH_DISPLAY_VALUES',0x0bcc:'RTC_READ_REGISTER',0x0bdb:'RTC_END_ACCESS',0x0be3:'RTC_WRITE_REGISTER',0x0bed:'RTC_SELECT_BANK',0x0bf5:'RTC_READ_TIME_BLOCK',0x0c28:'RTC_WRITE_TIME_BLOCK',0x0c2c:'RTC_WRITE_FIELDS',0x0e75:'RTC_VALIDATE_CALENDAR_DATE',0x0ef6:'RTC_TEST_BCD_LEAP_YEAR',0x0f11:'STATUS_DIRECTION_INDICATOR',0x18a9:'SERIAL_RECEIVE_SERVICE',0x18ab:'SERIAL_READ_STATUS',0x18dc:'SERIAL_READ_CHAR',
      0x1932:'SERIAL_XOFF_PATH',0x1c13:'TX_DEQUEUE',0x1c98:'SERIAL_SEND_CHAR',0x1ccc:'DOCUMENT_TX_INIT',
      0x1d14:'DOCUMENT_DIRECTORY_LOOKUP',0x1d32:'DIRECTORY_READ_ENTRY',0x1e80:'DOCUMENT_POOL_INIT',0x1f5f:'DIRECTORY_INDEX_TO_ADDRESS',
      0x21df:'AUX_OUTPUT_MEMORY',0x24b0:'EDITOR_UPDATE_POSITION',
@@ -246,12 +246,14 @@ def generate_source():
      0x0bf5:'Read 13 RTC registers specified at 0C1Bh into buffer 4658h; mixed counters and alarm RAM',
      0x0c28:'Write clock data from RAM buffer to RTC using table at 0C1Bh',
      0x0c2c:'Common RTC write loop through register-address table',
+     0x0e75:'Clamp calendar days to month length; February 28/29 selection tests BCD year modulo four at 0EF6h',
+     0x0ef6:'Leap year test on BCD low year at 465Ch; result AND 03h is zero for multiples of four',
      0x18ab:'Communications status poll, port 5Fh; UART electrical mapping not verified',
      0x1ccc:'Document transfer setup: loads data pointer and length from directory entry',
      0x1e80:'Initialize document pool at 4800h and compute usable RAM size',
     }
     # Special table/data descriptions for readable source, also includes true byte layout.
-    DATA_LABELS={0x0543:'DJ_SCRIPT_DATA',0x0565:'KB_NORMAL_TABLE',0x05ad:'KB_ALT_TABLE',0x05f5:'KB_SHIFT_TABLE',0x0653:'LCD_INIT_COMMANDS',0x0bbf:'RTC_INITIAL_VALUES',0x0c1b:'RTC_REGISTER_LIST',0x0f7d:'COMMAND_DISPATCH_TABLE',0x10bf:'COMMAND_TABLE_TERMINATOR'}
+    DATA_LABELS={0x0543:'DJ_SCRIPT_DATA',0x0565:'KB_NORMAL_TABLE',0x05ad:'KB_ALT_TABLE',0x05f5:'KB_SHIFT_TABLE',0x0653:'LCD_INIT_COMMANDS',0x0bbf:'RTC_INITIAL_VALUES',0x0c1b:'RTC_REGISTER_LIST',0x0e68:'MONTH_LENGTHS_BCD',0x0f7d:'COMMAND_DISPATCH_TABLE',0x10bf:'COMMAND_TABLE_TERMINATOR'}
     # Subdivide packed command table into readable entries, and keyboard map into scan rows.
     groupstarts={}
     modestarts={}
@@ -271,6 +273,7 @@ def generate_source():
      0x0653:'HD44780 command table; original 34h,34h,01h,06h,0Eh,00h',
      0x0bbf:'13-byte default BCD data values for MM58167 registers, copied through 0C2Ch',
      0x0c1b:'13 MM58167 register offsets: 05 07 06 0A 09 04 03 02 0F 0C 0B 0D 0E',
+     0x0e68:'Month length table (BCD); February permits 29 until leap-year validation',
      0x0f7d:'Packed keycode/mode/target records; U2/U3 boundary bisects this table',
      0x10bf:'Zero terminator for 29 groups and 88 command-mode mappings',
     }

@@ -1714,7 +1714,7 @@ RTC_REFRESH_DISPLAY_VALUES:
     POP AF                                     ; @0BB1  F1                
     LD (4008h),A                               ; @0BB2  32 08 40          
 loc_0BB5:
-    CALL NC,loc_0E75                           ; @0BB5  D4 75 0E          
+    CALL NC,RTC_VALIDATE_CALENDAR_DATE                           ; @0BB5  D4 75 0E          
     LD A,(44F9h)                               ; @0BB8  3A F9 44          
     OR A                                       ; @0BBB  B7                
     JR NZ,RTC_WRITE_TIME_BLOCK                             ; @0BBC  20 6A             
@@ -1908,7 +1908,7 @@ loc_0D1A:
     LD (44F9h),A                               ; @0D20  32 F9 44          
     LD A,(4008h)                               ; @0D23  3A 08 40          
     CP 03h                                     ; @0D26  FE 03             
-    JP NZ,loc_0E75                             ; @0D28  C2 75 0E          
+    JP NZ,RTC_VALIDATE_CALENDAR_DATE                             ; @0D28  C2 75 0E          
     XOR A                                      ; @0D2B  AF                
     LD (4663h),A                               ; @0D2C  32 63 46          
     JP loc_0E95                                ; @0D2F  C3 95 0E          
@@ -2090,8 +2090,10 @@ loc_0E42:
     RET                                        ; @0E47  C9                
     DB 00h,4Fh,11h,E3h,E0h,F8h,9Fh,00h,6Ch,11h,9Fh,02h,ABh,9Fh,02h,02h ; @0E48  00 4F 11 E3 E0 F8 9F 00 6C 11 9F 02 AB 9F 02 02
     DB 9Fh,01h,B9h,02h,B9h,02h,9Fh,FFh,00h,8Ch,12h,9Fh,01h,B9h,02h,9Fh ; @0E58  9F 01 B9 02 B9 02 9F FF 00 8C 12 9F 01 B9 02 9F
+MONTH_LENGTHS_BCD:  ; 12 BCD month lengths (+ sentinel), February 29 subject to leap-year correction
     DB FFh,31h,29h,31h,30h,31h,30h,31h,31h,30h,31h,30h,31h ; @0E68  FF 31 29 31 30 31 30 31 31 30 31 30 31   |.1)1010110101|
-loc_0E75:
+RTC_VALIDATE_CALENDAR_DATE:
+    ; Validate month/day against lookup table; use BCD year stored in RTC RAM at 0Ah/09h for February.
     LD HL,4659h                                ; @0E75  21 59 46          
     LD C,(HL)                                  ; @0E78  4E                
     BIT 4,C                                    ; @0E79  CB 61             
@@ -2115,7 +2117,7 @@ loc_0E83:
     LD (44F9h),A                               ; @0E92  32 F9 44          
 loc_0E95:
     LD A,(465Ch)                               ; @0E95  3A 5C 46          
-    CALL loc_0EF6                              ; @0E98  CD F6 0E          
+    CALL RTC_TEST_BCD_LEAP_YEAR                              ; @0E98  CD F6 0E          
     LD HL,(4659h)                              ; @0E9B  2A 59 46          
     LD A,02h                                   ; @0E9E  3E 02             
     JR Z,loc_0EB8                              ; @0EA0  28 16             
@@ -2176,7 +2178,8 @@ loc_0EF0:
     LD A,01h                                   ; @0EF0  3E 01             
     LD (44F9h),A                               ; @0EF2  32 F9 44          
     RET                                        ; @0EF5  C9                
-loc_0EF6:
+RTC_TEST_BCD_LEAP_YEAR:
+    ; Input A=BCD year YY at 465Ch, Z flag set iff YY divisible by four (does not handle century rule).
     LD B,A                                     ; @0EF6  47                
     RRCA                                       ; @0EF7  0F                
     RRCA                                       ; @0EF8  0F                
