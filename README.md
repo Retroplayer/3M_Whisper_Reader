@@ -65,3 +65,10 @@ python3 tools/build_disassembly.py
 ```
 
 The reassembler has been tested to reproduce the three factory EPROM images **byte-for-byte**. Hand-edited source should be kept on a branch or in a separate file before regenerating. The single-enable 40×2 LCD initialization experiment changes only the two `34h` bytes at `LCD_INIT_COMMANDS` (`0653h` and `0654h`) to `38h`; it is not hardware-tested and does not add a two-line editor. The project source package supplied in the ChatGPT restoration conversation includes this test image and further research notes.
+
+
+## Document-transfer reverse engineering
+
+The firmware's SEND / CTL+SEND / SAVE and \`PC\`/\`PX\` controls are traced in [document transfer analysis](docs/document_transfer.md). Important verified entry points: \`1973h\` literal-send bypass, \`1978h\` regular SEND, \`1A29h\` FORMAT-line parser, \`1A75h\` \`PC\`/\`PX\` RAM-variable table, \`1A7Ch\` SAVE toggle, and \`1B1Fh\` saved-line append. A 24-signature [ROM regression checker](tools/verify_transfer.py) validates these references against the original dumps. Run with \`python3 tools/verify_transfer.py\`.
+
+This knowledge is integrated into [the annotated disassembly](firmware/LEX31_full_annotated.asm) and the [disassembly generator](tools/build_disassembly.py). Normal SEND and literal SEND deliberately use different source pointer/count pairs but share the same low-level output driver.
