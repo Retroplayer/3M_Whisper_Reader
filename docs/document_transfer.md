@@ -142,3 +142,12 @@ The strongest hooks are *file-level* operations, not raw UART replacement:
 Use \`python3 tools/verify_transfer.py\` to check the key control-flow opcode bytes directly against the preserved original ROMs. Source labels are documented in \`firmware/LEX31_full_annotated.asm\`.
 
 **Remaining unknowns:** exact keyboard matrix-to-key legend assignments, the serial hardware's RTS/CTS wiring, handling of embedded NUL/nonprintable characters through SAVE, and whether special-format text is honored in every communications mode.
+
+
+### Special file Z temporarily changes the mode flag to 01h
+
+At \`1C89h–1C95h\`, an outgoing CR may select the special Z file. The redirect enters \`1CC8h\` and stores \`01h\` to \`451Fh\` at \`1CCDh\`, then uses the same \`4521h/4523h\` source pointer/count mechanism used by literal SEND. This **temporary literal state** prevents recursive format-line/CR handling inside the Z expansion.
+
+When its byte count reaches zero, \`1C56h\` recognizes \`451Fh==01h\`, writes \`01h\` to \`452Ah\`, and decrements \`451Fh\` back to zero. \`1C60h–1C6Bh\` subsequently handles the deferred CR.
+
+Thus \`451Fh\` is not a simple Boolean: \`00h\` means normal formatted transmission; \`01h\` means temporary transmission of file Z; \`FFh\` means CTL+SEND literal transfer. This is another reason extension code must preserve the original driver state machine instead of treating every nonzero value interchangeably.
