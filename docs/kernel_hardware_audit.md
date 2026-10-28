@@ -128,3 +128,26 @@ The descriptor's second byte selects a text pair in the option-message library; 
 6. Source editability: the current \`assemble_source.py\` verifies byte-preserving assembly and same-size patches, **not full relocation of arbitrary Z80 instructions**. Changes increasing ROM code/table sizes will need a proper assembler, linker, bank layout, and cross-ROM address audit.
 
 **Immediate next reverse-engineering decisions:** trace DB-37 continuity against NSC800 signals and any decode ICs; fully label the power/status ports; reconstruct config defaults and their checksum updates; trace OS handler mode transitions; prove or disprove a firmware-supported RAM loader/expansion-ROM interface.
+
+
+## Further mode transitions and persistence (ROM-verifiable)
+
+- **Editor:** \`2858h\` and \`28C3h\` write \`01h\` to \`4507h\`, then return to document editing. This provides a concrete identification of **OS mode 01h = EDITOR**.
+- **Credential editing:** \`28C9h–28EAh\` saves the previous OS mode, writes **\`0Bh\`** to \`4507h\` at \`28DCh\` and enters the credential-editing input path. At \`2846h–284Bh\` it selects between \`462Fh\` (Personal Access Password) and \`4611h\` (DJ password). The exit routine at \`28EDh\` recalculates the persistent-setting XOR checksum via \`04BAh\`, then restores the previous mode at \`28F5h\`. So **mode 0Bh is a password-editing submode**, not another arbitrary terminal communication mode.
+- A separate routine at \`26F6h\` enters mode \`0Ah\`; its UI behavior is not sufficiently traced to assign a permanent name.
+- **Persistent settings are backed RAM, not necessarily EEPROM:** the firmware updates the 4611h–4656h checksum after changing credentials/configuration. This is a software persistence protocol independent of physical battery-backup arrangement.
+
+### More status-indicator mask candidates
+
+| Mask | ROM evidence | Candidate label | Confidence |
+| --- | --- | --- | --- |
+| \`0008h\` | \`0A77h\`: directory entry count \`4593h\` | MEMORY | high |
+| \`0200h\` | \`01E3h\` sets during auxiliary output; \`022Ch\` clears on completion | PRINTER | high (software behavior) |
+| \`0400h\` | \`0A82h\`: selected file/transfer state at \`4592h\` | SEND | medium; mode context may vary |
+| \`0800h\` | \`0AA0h\`: communications \`5Fh\` bit 4 active-low | LINE READY | medium; modem DCD wiring not traced |
+| \`1000h\` | \`0A8Ah\`: SAVE active flag \`4514h\` | SAVE | high |
+| \`2000h\` | \`0A92h\`: transmission hold flag \`4517h\` | XOFF | high |
+| \`4000h\` | \`0AAAh–0ABCh\`: RX/TX queue occupancy | TRAFFIC | high |
+| \`8000h\` | \`0ACEh\`: port \`43h\` bits 2–3 and periodic alert logic | Low battery / status warning | low |
+
+The first seven masks are supported by ROM conditions and the owner's manual's legend descriptions. **Direct segment-electrode mapping still needs hardware inspection.**
