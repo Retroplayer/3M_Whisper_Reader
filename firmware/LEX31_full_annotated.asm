@@ -3239,7 +3239,7 @@ loc_1B45:
 loc_1B4A:
     CALL loc_04A1                              ; @1B4A  CD A1 04          
     RET Z                                      ; @1B4D  C8                
-    CALL loc_1B7A                              ; @1B4E  CD 7A 1B          
+    CALL ONLINE_ENQ_Y_ANSWERBACK                              ; @1B4E  CD 7A 1B          
     LD B,A                                     ; @1B51  47                
     LD A,(4518h)                               ; @1B52  3A 18 45          
     OR A                                       ; @1B55  B7                
@@ -3267,7 +3267,9 @@ loc_1B68:
     POP AF                                     ; @1B76  F1                
     JR Z,loc_1BD2                              ; @1B77  28 59             
     RET                                        ; @1B79  C9                
-loc_1B7A:
+ONLINE_ENQ_Y_ANSWERBACK:
+    ; 3M Owner's Manual p.69: when enabled, remote ENQ (05h) automatically transmits file Y.
+    ; Following control checks, LD A,59h (1B88h) + directory lookup (1B8Ah) selects the Y record.
     CP 05h                                     ; @1B7A  FE 05             
     RET NZ                                     ; @1B7C  C0                
     RST 10h                                    ; @1B7D  D7                
@@ -3278,6 +3280,7 @@ loc_1B7A:
     OR A                                       ; @1B85  B7                
     LD A,B                                     ; @1B86  78                
     RET NZ                                     ; @1B87  C0                
+    ; ASCII 'Y' (59h) — programmed response file for ENQ (manual p.69).
     LD A,59h                                   ; @1B88  3E 59             
     CALL DOCUMENT_DIRECTORY_LOOKUP             ; @1B8A  CD 14 1D          
     LD A,05h                                   ; @1B8D  3E 05             
@@ -3423,7 +3426,7 @@ loc_1C6D:
     JR NZ,loc_1C97                             ; @1C72  20 23             
     LD A,0Dh                                   ; @1C74  3E 0D             
     CP C                                       ; @1C76  B9                
-    JR Z,loc_1C89                              ; @1C77  28 10             
+    JR Z,SEND_CR_WITH_OPTIONAL_Z_FILE                              ; @1C77  28 10             
     LD A,(4526h)                               ; @1C79  3A 26 45          
     OR A                                       ; @1C7C  B7                
     JR Z,loc_1C97                              ; @1C7D  28 18             
@@ -3432,10 +3435,13 @@ loc_1C6D:
     LD HL,0271h                                ; @1C82  21 71 02          
     LD (4528h),HL                              ; @1C85  22 28 45          
     RET                                        ; @1C88  C9                
-loc_1C89:
+SEND_CR_WITH_OPTIONAL_Z_FILE:
+    ; 3M Owner's Manual p.67: end-of-line can use file Z instead of ASCII CR.
+    ; The configured path loads A=5Ah, looks up directory record Z, and enters DOCUMENT_TX_INIT.
     RST 10h                                    ; @1C89  D7                
     BIT 2,E                                    ; @1C8A  CB 53             
     JR Z,loc_1C97                              ; @1C8C  28 09             
+    ; ASCII 'Z' (5Ah) — programmable EOL sequence file (manual p.67).
     LD A,5Ah                                   ; @1C8E  3E 5A             
     CALL DOCUMENT_DIRECTORY_LOOKUP             ; @1C90  CD 14 1D          
     LD C,0Dh                                   ; @1C93  0E 0D             
