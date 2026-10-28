@@ -131,6 +131,7 @@ loc_006C:
     OR C                                       ; @006E  B1                
     JR NZ,loc_006C                             ; @006F  20 FB             
     LD DE,4590h                                ; @0071  11 90 45          
+    ; Clear volatile RAM 4000h..4591h by LDDR zero-copy chain; preserve retained directory/configuration blocks.
     LD BC,0591h                                ; @0074  01 91 05          
     LD (HL),A                                  ; @0077  77                
     LDDR                                       ; @0078  ED B8             
@@ -170,13 +171,13 @@ loc_00B2:
     RST 38h                                    ; @00B7  FF                
     LD (4665h),HL                              ; @00B8  22 65 46          
     JR NZ,loc_00C0                             ; @00BB  20 03             
-    CALL loc_04AD                              ; @00BD  CD AD 04          
+    CALL CHECKSUM_DOCUMENT_DIRECTORY                              ; @00BD  CD AD 04          
 loc_00C0:
     PUSH AF                                    ; @00C0  F5                
     CALL LCD_INIT_START                        ; @00C1  CD 3D 06          
     POP AF                                     ; @00C4  F1                
     CALL NZ,DOCUMENT_POOL_INIT                 ; @00C5  C4 80 1E          
-    CALL loc_04BA                              ; @00C8  CD BA 04          
+    CALL CHECKSUM_PERSISTENT_SETTINGS                              ; @00C8  CD BA 04          
     CALL NZ,loc_1E9B                           ; @00CB  C4 9B 1E          
     CALL loc_1828                              ; @00CE  CD 28 18          
     EI                                         ; @00D1  FB                
@@ -806,7 +807,7 @@ loc_0435:
 loc_0448:
     LD HL,(466Ch)                              ; @0448  2A 6C 46          
     LD (4654h),HL                              ; @044B  22 54 46          
-    CALL loc_04BA                              ; @044E  CD BA 04          
+    CALL CHECKSUM_PERSISTENT_SETTINGS                              ; @044E  CD BA 04          
 loc_0451:
     LD HL,4515h                                ; @0451  21 15 45          
     XOR A                                      ; @0454  AF                
@@ -825,7 +826,7 @@ loc_0457:
     RET                                        ; @046F  C9                
 loc_0470:
     PUSH BC                                    ; @0470  C5                
-    CALL loc_07E6                              ; @0471  CD E6 07          
+    CALL LCD_SAVE_MODAL_SCREEN                              ; @0471  CD E6 07          
     LD HL,1327h                                ; @0474  21 27 13          
     CALL loc_003F                              ; @0477  CD 3F 00          
 loc_047A:
@@ -835,7 +836,7 @@ loc_047A:
     PUSH AF                                    ; @0482  F5                
     POP HL                                     ; @0483  E1                
     LD (4503h),HL                              ; @0484  22 03 45          
-    CALL loc_0828                              ; @0487  CD 28 08          
+    CALL LCD_RESTORE_MODAL_SCREEN                              ; @0487  CD 28 08          
     POP BC                                     ; @048A  C1                
     LD HL,(4503h)                              ; @048B  2A 03 45          
     PUSH HL                                    ; @048E  E5                
@@ -861,7 +862,8 @@ loc_04A4:
     EI                                         ; @04AA  FB                
     POP AF                                     ; @04AB  F1                
     RET                                        ; @04AC  C9                
-loc_04AD:
+CHECKSUM_DOCUMENT_DIRECTORY:
+    ; XOR 125 bytes at 4593h..460Fh, compare with 4610h, and write refreshed XOR at 4610h; used in cold-boot retained-directory validation.
     LD HL,4593h                                ; @04AD  21 93 45          
     LD B,7Dh                                   ; @04B0  06 7D             
 loc_04B2:
@@ -873,7 +875,8 @@ loc_04B3:
     CP (HL)                                    ; @04B7  BE                
     LD (HL),A                                  ; @04B8  77                
     RET                                        ; @04B9  C9                
-loc_04BA:
+CHECKSUM_PERSISTENT_SETTINGS:
+    ; XOR 70 bytes at 4611h..4656h using common loop at 04B2h; compare and refresh checksum at 4657h.
     LD HL,4611h                                ; @04BA  21 11 46          
     LD B,46h                                   ; @04BD  06 46             
     JR loc_04B2                                ; @04BF  18 F1             
@@ -915,7 +918,7 @@ loc_04F1:
     LD (HL),00h                                ; @0500  36 00             
     OR A                                       ; @0502  B7                
     RET NZ                                     ; @0503  C0                
-    CALL loc_07E6                              ; @0504  CD E6 07          
+    CALL LCD_SAVE_MODAL_SCREEN                              ; @0504  CD E6 07          
     LD A,80h                                   ; @0507  3E 80             
     PUSH AF                                    ; @0509  F5                
     CALL loc_1E05                              ; @050A  CD 05 1E          
@@ -1008,6 +1011,8 @@ loc_0661:
     INC DE                                     ; @0665  13                
     DJNZ loc_0661                              ; @0666  10 F9             
     JP loc_0878                                ; @0668  C3 78 08          
+LCD_CGRAM_BOOT_TABLE:
+    ; CGRAM addresses 00/10/20/30 followed by four 11-byte 5x10 character patterns, copied to LCD at 0896h. Two-line 5x8 modules need re-layout.
     DB 00h,10h,20h,30h,1Eh,10h,1Ch,10h,1Eh,07h,08h,06h,01h,0Eh,00h,1Ch ; @066B  00 10 20 30 1E 10 1C 10 1E 07 08 06 01 0E 00 1C
     DB 12h,12h,12h,1Ch,01h,01h,01h,09h,06h,00h,00h,10h,08h,04h,02h,01h ; @067B  12 12 12 1C 01 01 01 09 06 00 00 10 08 04 02 01
     DB 00h,00h,00h,00h,00h,00h,04h,04h,0Eh,0Eh,0Eh,1Fh,04h,00h,00h,00h ; @068B  00 00 00 00 00 00 04 04 0E 0E 0E 1F 04 00 00 00
@@ -1159,6 +1164,8 @@ loc_078E:
     POP DE                                     ; @078E  D1                
     POP HL                                     ; @078F  E1                
     RET                                        ; @0790  C9                
+LCD_CHARACTER_REMAP_TABLE:
+    ; Twelve 3-byte input->display-code remaps and a zero terminator; accessed by 027Bh at 0782h.
     DB 02h,FCh,00h,03h,D0h,00h,0Dh,EBh,00h,1Bh,00h,00h,80h,02h,00h,5Ch ; @0791  02 FC 00 03 D0 00 0D EB 00 1B 00 00 80 02 00 5C
     DB 04h,00h,07h,06h,00h,67h,E7h,00h,6Ah,EAh,00h,70h,F0h,00h,71h,F1h ; @07A1  04 00 07 06 00 67 E7 00 6A EA 00 70 F0 00 71 F1
     DB 00h,79h,F9h,00h,00h                      ; @07B1  00 79 F9 00 00
@@ -1188,7 +1195,8 @@ loc_07D9:
     LD A,(4001h)                               ; @07DE  3A 01 40          
     OR 80h                                     ; @07E1  F6 80             
     JP LCD_COMMAND                             ; @07E3  C3 60 07          
-loc_07E6:
+LCD_SAVE_MODAL_SCREEN:
+    ; Save original HD44780 display and mode state; 40-cell one-line display assumptions, 20 character-pairs on stack.
     LD (4503h),A                               ; @07E6  32 03 45          
     CALL loc_081C                              ; @07E9  CD 1C 08          
     POP HL                                     ; @07EC  E1                
@@ -1220,11 +1228,13 @@ loc_081C:
     LD (44FEh),DE                              ; @081F  ED 53 FE 44       
     LD (4500h),BC                              ; @0823  ED 43 00 45       
     RET                                        ; @0827  C9                
-loc_0828:
+LCD_RESTORE_MODAL_SCREEN:
+    ; Restore the previously saved 40 cells; B=13h loops 20 times; needs 40x2 adaptation.
     CALL loc_081C                              ; @0828  CD 1C 08          
     RST 18h                                    ; @082B  DF                
     POP HL                                     ; @082C  E1                
     LD (44FAh),HL                              ; @082D  22 FA 44          
+    ; 20 pairs = 40 cells restored; the original modal-display save/restore mechanism is one-line-only.
     LD B,13h                                   ; @0830  06 13             
     LD C,26h                                   ; @0832  0E 26             
 loc_0834:
@@ -1290,6 +1300,7 @@ loc_088A:
 LCD_PATTERN_LOAD:
     PUSH BC                                    ; @0896  C5                
     LD C,A                                     ; @0897  4F                
+    ; 11 CGRAM row writes per original 5x10 custom character, four characters total.
     LD B,0Bh                                   ; @0898  06 0B             
 loc_089A:
     LD A,C                                     ; @089A  79                
@@ -1829,7 +1840,7 @@ loc_0C60:
     RET                                        ; @0C6A  C9                
 loc_0C6B:
     LD A,07h                                   ; @0C6B  3E 07             
-    CALL loc_07E6                              ; @0C6D  CD E6 07          
+    CALL LCD_SAVE_MODAL_SCREEN                              ; @0C6D  CD E6 07          
     CALL loc_09F6                              ; @0C70  CD F6 09          
     LD A,(4008h)                               ; @0C73  3A 08 40          
     PUSH AF                                    ; @0C76  F5                
@@ -1859,7 +1870,7 @@ loc_0CA1:
 loc_0CA2:
     CALL loc_0D62                              ; @0CA2  CD 62 0D          
     LD A,08h                                   ; @0CA5  3E 08             
-    CALL loc_07E6                              ; @0CA7  CD E6 07          
+    CALL LCD_SAVE_MODAL_SCREEN                              ; @0CA7  CD E6 07          
     XOR A                                      ; @0CAA  AF                
     LD (44F9h),A                               ; @0CAB  32 F9 44          
     CALL RTC_REFRESH_DISPLAY_VALUES                              ; @0CAE  CD 94 0B          
@@ -1887,8 +1898,10 @@ loc_0CDB:
     ; Dispatched for keycode/mode: 8E/02, 8E/03, 8E/05
     POP HL                                     ; @0CDB  E1                
 loc_0CDC:
-    CALL loc_0828                              ; @0CDC  CD 28 08          
+    CALL LCD_RESTORE_MODAL_SCREEN                              ; @0CDC  CD 28 08          
     JP loc_0A08                                ; @0CDF  C3 08 0A          
+RTC_FIELD_DESCRIPTOR_TABLE:
+    ; Clock/date field metadata, referenced from 0DA3h; complete record semantics still need tracing.
     DB 01h,07h,08h,01h,12h,12h,01h,31h,15h,80h,FFh,1Bh,00h,23h,1Eh,00h ; @0CE2  01 07 08 01 12 12 01 31 15 80 FF 1B 00 23 1E 00
     DB 59h,21h,00h,59h,24h,01h,02h,02h,00h,23h,05h,00h,59h,08h ; @0CF2  59 21 00 59 24 01 02 02 00 23 05 00 59 08   |Y!.Y$....#..Y.|
 RTC_INCREMENT_DATE_FIELD:
@@ -2096,6 +2109,8 @@ loc_0E42:
     LD (DE),A                                  ; @0E45  12                
     INC DE                                     ; @0E46  13                
     RET                                        ; @0E47  C9                
+RTC_SCREEN_LAYOUT_TABLE:
+    ; Compact clock/alarm presentation descriptors; referenced through IY, not executable instructions.
     DB 00h,4Fh,11h,E3h,E0h,F8h,9Fh,00h,6Ch,11h,9Fh,02h,ABh,9Fh,02h,02h ; @0E48  00 4F 11 E3 E0 F8 9F 00 6C 11 9F 02 AB 9F 02 02
     DB 9Fh,01h,B9h,02h,B9h,02h,9Fh,FFh,00h,8Ch,12h,9Fh,01h,B9h,02h,9Fh ; @0E58  9F 01 B9 02 B9 02 9F FF 00 8C 12 9F 01 B9 02 9F
 MONTH_LENGTHS_BCD:  ; 12 BCD month lengths (+ sentinel), February 29 subject to leap-year correction
@@ -2257,7 +2272,7 @@ loc_0F51:
     INC HL                                     ; @0F58  23                
     LD (HL),01h                                ; @0F59  36 01             
     CALL RTC_WRITE_TIME_BLOCK                              ; @0F5B  CD 28 0C          
-    CALL loc_07E6                              ; @0F5E  CD E6 07          
+    CALL LCD_SAVE_MODAL_SCREEN                              ; @0F5E  CD E6 07          
     LD HL,11BAh                                ; @0F61  21 BA 11          
     CALL loc_003F                              ; @0F64  CD 3F 00          
 loc_0F67:
@@ -2491,7 +2506,7 @@ COMMAND_TABLE_TERMINATOR:  ; Zero terminator for 29 groups and 88 command-mode m
 loc_163E:
     ; Dispatched for keycode/mode: 93/00, 93/01, 93/03
     LD A,02h                                   ; @163E  3E 02             
-    CALL loc_07E6                              ; @1640  CD E6 07          
+    CALL LCD_SAVE_MODAL_SCREEN                              ; @1640  CD E6 07          
     CALL loc_0DAE                              ; @1643  CD AE 0D          
     LD HL,152Ah                                ; @1646  21 2A 15          
     CALL loc_003F                              ; @1649  CD 3F 00          
@@ -2565,7 +2580,7 @@ loc_16AD:
     RET                                        ; @16B2  C9                
 loc_16B3:
     LD A,09h                                   ; @16B3  3E 09             
-    CALL loc_07E6                              ; @16B5  CD E6 07          
+    CALL LCD_SAVE_MODAL_SCREEN                              ; @16B5  CD E6 07          
     CALL loc_16E6                              ; @16B8  CD E6 16          
     XOR A                                      ; @16BB  AF                
     LD (400Bh),A                               ; @16BC  32 0B 40          
@@ -2624,7 +2639,7 @@ loc_1714:
     INC HL                                     ; @1719  23                
     PUSH HL                                    ; @171A  E5                
     PUSH BC                                    ; @171B  C5                
-    CALL loc_1839                              ; @171C  CD 39 18          
+    CALL CONFIG_BIT_TEST                              ; @171C  CD 39 18          
     AND B                                      ; @171F  A0                
     EXX                                        ; @1720  D9                
     JR NZ,loc_1724                             ; @1721  20 01             
@@ -2650,7 +2665,7 @@ loc_1737:
     JR loc_1749                                ; @173D  18 0A             
 loc_173F:
     ; Dispatched for keycode/mode: 84/09
-    CALL loc_1753                              ; @173F  CD 53 17          
+    CALL CONFIG_FIND_OPTION                              ; @173F  CD 53 17          
     LD A,(400Ah)                               ; @1742  3A 0A 40          
     DEC E                                      ; @1745  1D                
     CP E                                       ; @1746  BB                
@@ -2658,10 +2673,11 @@ loc_173F:
     INC A                                      ; @1748  3C                
 loc_1749:
     LD (400Ah),A                               ; @1749  32 0A 40          
-    CALL loc_1753                              ; @174C  CD 53 17          
+    CALL CONFIG_FIND_OPTION                              ; @174C  CD 53 17          
     LD (400Ch),A                               ; @174F  32 0C 40          
     RET                                        ; @1752  C9                
-loc_1753:
+CONFIG_FIND_OPTION:
+    ; Nine row counts at 1855h; sum counts preceding 4009h, add selected field 400Ah, index 3-byte descriptor at 185Eh; outputs HL descriptor, A display offset, E count.
     LD HL,1855h                                ; @1753  21 55 18          
     LD A,(4009h)                               ; @1756  3A 09 40          
     LD B,A                                     ; @1759  47                
@@ -2721,7 +2737,7 @@ loc_1792:
     INC HL                                     ; @179A  23                
     INC HL                                     ; @179B  23                
     LD A,(HL)                                  ; @179C  7E                
-    CALL loc_1839                              ; @179D  CD 39 18          
+    CALL CONFIG_BIT_TEST                              ; @179D  CD 39 18          
     LD (HL),A                                  ; @17A0  77                
     LD HL,4654h                                ; @17A1  21 54 46          
     LD A,(4009h)                               ; @17A4  3A 09 40          
@@ -2736,7 +2752,7 @@ loc_17B0:
     LD (400Bh),A                               ; @17B2  32 0B 40          
     OR (HL)                                    ; @17B5  B6                
     LD (HL),A                                  ; @17B6  77                
-    CALL loc_04BA                              ; @17B7  CD BA 04          
+    CALL CHECKSUM_PERSISTENT_SETTINGS                              ; @17B7  CD BA 04          
     XOR A                                      ; @17BA  AF                
     CALL loc_1749                              ; @17BB  CD 49 17          
     POP AF                                     ; @17BE  F1                
@@ -2813,7 +2829,8 @@ loc_1828:
     XOR A                                      ; @1834  AF                
     LD (4517h),A                               ; @1835  32 17 45          
     RET                                        ; @1838  C9                
-loc_1839:
+CONFIG_BIT_TEST:
+    ; Third descriptor byte is bit index in 4654h..4656h; index>>3 selects byte, index&7 selects mask; returns A = current byte XOR bit mask, B=bit mask.
     EXX                                        ; @1839  D9                
     LD B,A                                     ; @183A  47                
     RRCA                                       ; @183B  0F                
@@ -2836,6 +2853,8 @@ loc_1852:
     LD B,A                                     ; @1852  47                
     XOR (HL)                                   ; @1853  AE                
     RET                                        ; @1854  C9                
+CONFIGURATION_DESCRIPTOR_TABLE:
+    ; Nine menu row sizes 01 03 02 02 02 01 02 02 02, then 17 x 3-byte (screen offset, text-choice index, configuration bit index) descriptors from 185Eh.
     DB 01h,03h,02h,02h,02h,01h,02h,02h,02h,18h,00h,07h,07h,02h,02h,15h ; @1855  01 03 02 02 02 01 02 02 02 18 00 07 07 02 02 15
     DB 04h,03h,24h,04h,05h,14h,06h,01h,22h,08h,04h,07h,0Ah,06h,24h,04h ; @1865  04 03 24 04 05 14 06 01 22 08 04 07 0A 06 24 04
     DB 08h,10h,0Ch,10h,24h,04h,11h,18h,0Eh,12h,14h,10h,09h,1Ah,12h,0Ah ; @1875  08 10 0C 10 24 04 11 18 0E 12 14 10 09 1A 12 0A
@@ -2961,7 +2980,7 @@ loc_1946:
     SET 1,H                                    ; @1960  CB CC             
     LD (4654h),HL                              ; @1962  22 54 46          
     PUSH BC                                    ; @1965  C5                
-    CALL loc_04BA                              ; @1966  CD BA 04          
+    CALL CHECKSUM_PERSISTENT_SETTINGS                              ; @1966  CD BA 04          
     POP BC                                     ; @1969  C1                
     JR loc_1994                                ; @196A  18 28             
 loc_196C:
@@ -2978,11 +2997,11 @@ SEND_SELECT_FILE:
     ; Dispatched for keycode/mode: 96/00, 96/03
     RST 10h                                    ; @1978  D7                
     LD (466Ch),HL                              ; @1979  22 6C 46          
-    CALL loc_04BA                              ; @197C  CD BA 04          
+    CALL CHECKSUM_PERSISTENT_SETTINGS                              ; @197C  CD BA 04          
     CALL loc_1A06                              ; @197F  CD 06 1A          
     LD A,11h                                   ; @1982  3E 11             
     LD (4525h),A                               ; @1984  32 25 45          
-    CALL loc_07E6                              ; @1987  CD E6 07          
+    CALL LCD_SAVE_MODAL_SCREEN                              ; @1987  CD E6 07          
     LD HL,15B1h                                ; @198A  21 B1 15          
     RST 30h                                    ; @198D  F7                
     CALL loc_1B01                              ; @198E  CD 01 1B          
@@ -3063,7 +3082,7 @@ loc_1A06:
     OR A                                       ; @1A09  B7                
     LD A,00h                                   ; @1A0A  3E 00             
     RET Z                                      ; @1A0C  C8                
-    CALL loc_07E6                              ; @1A0D  CD E6 07          
+    CALL LCD_SAVE_MODAL_SCREEN                              ; @1A0D  CD E6 07          
     LD HL,1388h                                ; @1A10  21 88 13          
     RST 30h                                    ; @1A13  F7                
     LD A,18h                                   ; @1A14  3E 18             
@@ -3073,7 +3092,7 @@ loc_1A06:
     XOR A                                      ; @1A1D  AF                
     LD (451Fh),A                               ; @1A1E  32 1F 45          
     CALL loc_0A64                              ; @1A21  CD 64 0A          
-    CALL loc_0828                              ; @1A24  CD 28 08          
+    CALL LCD_RESTORE_MODAL_SCREEN                              ; @1A24  CD 28 08          
     POP AF                                     ; @1A27  F1                
     RET                                        ; @1A28  C9                
 PARSE_FILE_FORMAT_LINE:
@@ -3142,7 +3161,7 @@ SAVE_TOGGLE_AND_SELECT_FILE:
     OR A                                       ; @1A82  B7                
     JP M,SAVE_APPEND_STAGED_LINE                              ; @1A83  FA 1F 1B          
     CALL loc_1A06                              ; @1A86  CD 06 1A          
-    CALL loc_07E6                              ; @1A89  CD E6 07          
+    CALL LCD_SAVE_MODAL_SCREEN                              ; @1A89  CD E6 07          
     LD HL,15B1h                                ; @1A8C  21 B1 15          
     RST 30h                                    ; @1A8F  F7                
 loc_1A90:
@@ -3300,7 +3319,7 @@ ONLINE_ENQ_Y_ANSWERBACK:
     LD B,C                                     ; @1B90  41                
     POP AF                                     ; @1B91  F1                
     XOR A                                      ; @1B92  AF                
-    CALL loc_07E6                              ; @1B93  CD E6 07          
+    CALL LCD_SAVE_MODAL_SCREEN                              ; @1B93  CD E6 07          
     JP SEND_START_SELECTED_RECORD                                ; @1B96  C3 A7 19          
 loc_1B99:
     LD HL,(451Dh)                              ; @1B99  2A 1D 45          
@@ -3703,7 +3722,7 @@ loc_1DEC:
 loc_1DFD:
     PUSH AF                                    ; @1DFD  F5                
     PUSH BC                                    ; @1DFE  C5                
-    CALL loc_04AD                              ; @1DFF  CD AD 04          
+    CALL CHECKSUM_DOCUMENT_DIRECTORY                              ; @1DFF  CD AD 04          
     POP BC                                     ; @1E02  C1                
     POP AF                                     ; @1E03  F1                
     RET                                        ; @1E04  C9                
@@ -3798,7 +3817,7 @@ loc_1EAD:
     LD (HL),B                                  ; @1EB4  70                
     LD HL,462Fh                                ; @1EB5  21 2F 46          
     LD (HL),B                                  ; @1EB8  70                
-    CALL loc_04BA                              ; @1EB9  CD BA 04          
+    CALL CHECKSUM_PERSISTENT_SETTINGS                              ; @1EB9  CD BA 04          
 loc_1EBC:
     LD HL,11C2h                                ; @1EBC  21 C2 11          
     JP loc_0045                                ; @1EBF  C3 45 00          
@@ -3841,7 +3860,7 @@ loc_1EFF:
 loc_1F09:
     ; Dispatched for keycode/mode: 8A/00
     LD A,03h                                   ; @1F09  3E 03             
-    CALL loc_07E6                              ; @1F0B  CD E6 07          
+    CALL LCD_SAVE_MODAL_SCREEN                              ; @1F0B  CD E6 07          
 loc_1F0E:
     LD A,(4593h)                               ; @1F0E  3A 93 45          
     OR A                                       ; @1F11  B7                
@@ -3971,7 +3990,7 @@ loc_1FDC:
     RET                                        ; @1FE4  C9                
 loc_1FE5:
     LD A,06h                                   ; @1FE5  3E 06             
-    CALL loc_07E6                              ; @1FE7  CD E6 07          
+    CALL LCD_SAVE_MODAL_SCREEN                              ; @1FE7  CD E6 07          
     CALL loc_2072                              ; @1FEA  CD 72 20          
 loc_1FED:
     CALL loc_0DAE                              ; @1FED  CD AE 0D          
@@ -4092,7 +4111,7 @@ loc_20A9:
     ; Dispatched for keycode/mode: 88/04
     POP HL                                     ; @20A9  E1                
     POP HL                                     ; @20AA  E1                
-    CALL loc_0828                              ; @20AB  CD 28 08          
+    CALL LCD_RESTORE_MODAL_SCREEN                              ; @20AB  CD 28 08          
     LD A,(4509h)                               ; @20AE  3A 09 45          
     OR A                                       ; @20B1  B7                
     JR Z,loc_20C2                              ; @20B2  28 0E             
@@ -4121,7 +4140,7 @@ loc_20CF:
     LD (4510h),A                               ; @20DA  32 10 45          
     LD (450Ch),BC                              ; @20DD  ED 43 0C 45       
     LD A,04h                                   ; @20E1  3E 04             
-    CALL loc_07E6                              ; @20E3  CD E6 07          
+    CALL LCD_SAVE_MODAL_SCREEN                              ; @20E3  CD E6 07          
 loc_20E6:
     CALL loc_2125                              ; @20E6  CD 25 21          
     LD A,(4512h)                               ; @20E9  3A 12 45          
@@ -4332,7 +4351,7 @@ loc_223E:
     ; Dispatched for keycode/mode: 95/00
     CALL loc_1A06                              ; @223E  CD 06 1A          
     LD A,01h                                   ; @2241  3E 01             
-    CALL loc_07E6                              ; @2243  CD E6 07          
+    CALL LCD_SAVE_MODAL_SCREEN                              ; @2243  CD E6 07          
 loc_2246:
     CALL loc_0A47                              ; @2246  CD 47 0A          
     LD HL,0004h                                ; @2249  21 04 00          
@@ -4761,7 +4780,7 @@ loc_250C:
     OR L                                       ; @2510  B5                
     RET NZ                                     ; @2511  C0                
     POP HL                                     ; @2512  E1                
-    CALL loc_07E6                              ; @2513  CD E6 07          
+    CALL LCD_SAVE_MODAL_SCREEN                              ; @2513  CD E6 07          
     LD HL,12E2h                                ; @2516  21 E2 12          
     RST 30h                                    ; @2519  F7                
     CALL loc_016C                              ; @251A  CD 6C 01          
@@ -5406,7 +5425,7 @@ loc_28D3:
     CALL loc_0306                              ; @28E7  CD 06 03          
     JP loc_26FB                                ; @28EA  C3 FB 26          
 loc_28ED:
-    CALL loc_04BA                              ; @28ED  CD BA 04          
+    CALL CHECKSUM_PERSISTENT_SETTINGS                              ; @28ED  CD BA 04          
     XOR A                                      ; @28F0  AF                
     LD (4538h),A                               ; @28F1  32 38 45          
     POP AF                                     ; @28F4  F1                
@@ -5431,7 +5450,7 @@ loc_2908:
 loc_291A:
     ; Dispatched for keycode/mode: 94/00, 94/01, 94/03, 94/09
     LD A,05h                                   ; @291A  3E 05             
-    CALL loc_07E6                              ; @291C  CD E6 07          
+    CALL LCD_SAVE_MODAL_SCREEN                              ; @291C  CD E6 07          
 loc_291F:
     LD HL,0100h                                ; @291F  21 00 01          
     RST 28h                                    ; @2922  EF                
@@ -5441,7 +5460,7 @@ loc_291F:
     LD A,3Dh                                   ; @292C  3E 3D             
     LD (4548h),A                               ; @292E  32 48 45          
 loc_2931:
-    CALL loc_04BA                              ; @2931  CD BA 04          
+    CALL CHECKSUM_PERSISTENT_SETTINGS                              ; @2931  CD BA 04          
     XOR A                                      ; @2934  AF                
     LD (4547h),A                               ; @2935  32 47 45          
     CALL loc_2DBC                              ; @2938  CD BC 2D          
@@ -5488,6 +5507,8 @@ loc_2980:
     RET NC                                     ; @298C  D0                
 loc_298D:
     JP (HL)                                    ; @298D  E9                
+CALCULATOR_KEY_REMAP_TABLE:
+    ; Calculator remap: 06 pair count; q->+, w->-, e->x, r->FD, i->., t->=. Called by key-event handler at 2975h.
     DB 06h,71h,2Bh,77h,2Dh,65h,78h,72h,FDh,69h,2Eh,74h,3Dh ; @298E  06 71 2B 77 2D 65 78 72 FD 69 2E 74 3D   |.q+w-exr.i.t=|
 loc_299B:
     PUSH AF                                    ; @299B  F5                

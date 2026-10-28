@@ -141,7 +141,7 @@ def decode(pc):
 
 def generate_source():
     # Known literal data regions: no speculative disassembly may cross these.
-    DATA=[(0x0543,0x0565,'DJ_DIAL_STRINGS'),(0x0565,0x063d,'KEYBOARD_TABLES'),(0x0653,0x0659,'LCD_INIT_TABLE'),(0x0bbf,0x0bcc,'RTC_INIT_BCD_VALUES'),(0x0c1b,0x0c28,'RTC_REGISTER_SEQUENCE'),(0x0e68,0x0e75,'MONTH_LENGTH_TABLE'),(0x0939,0x096c,'PACKED_CHARSET'),(0x096c,0x09d6,'PACKED_PHRASES'),(0x1a75,0x1a7c,'SEND_FORMAT_OPTION_TABLE'),(0x0f7d,0x10c0,'COMMAND_TABLE'),(0x10c0,0x112f,'SECONDARY_LOOKUP_TABLES'),(0x112f,0x163e,'PACKED_UI_DATA')]
+    DATA=[(0x066b,0x069b,'LCD_CGRAM_BOOT'),(0x0791,0x07b6,'LCD_CHAR_REMAP'),(0x0ce2,0x0d00,'RTC_FIELD_DESCRIPTORS'),(0x0e48,0x0e68,'RTC_SCREEN_LAYOUT'),(0x1855,0x1891,'CONFIG_DESCRIPTORS'),(0x298e,0x299b,'CALCULATOR_REMAP'),(0x0543,0x0565,'DJ_DIAL_STRINGS'),(0x0565,0x063d,'KEYBOARD_TABLES'),(0x0653,0x0659,'LCD_INIT_TABLE'),(0x0bbf,0x0bcc,'RTC_INIT_BCD_VALUES'),(0x0c1b,0x0c28,'RTC_REGISTER_SEQUENCE'),(0x0e68,0x0e75,'MONTH_LENGTH_TABLE'),(0x0939,0x096c,'PACKED_CHARSET'),(0x096c,0x09d6,'PACKED_PHRASES'),(0x1a75,0x1a7c,'SEND_FORMAT_OPTION_TABLE'),(0x0f7d,0x10c0,'COMMAND_TABLE'),(0x10c0,0x112f,'SECONDARY_LOOKUP_TABLES'),(0x112f,0x163e,'PACKED_UI_DATA')]
     data_mask=set()
     for x,y,_ in DATA:data_mask.update(range(x,y))
     # Known entry points verified in earlier disassembly work, may represent subroutines rather than unique code areas.
@@ -149,11 +149,11 @@ def generate_source():
      0x0000:'RESET_ENTRY',0x0030:'RST30_DISPLAY_PACKED_ROM_MESSAGE',0x002c:'NSC800_RSTC_PERIODIC_VECTOR',0x0034:'NSC800_RSTB_C000_VECTOR',0x0066:'NSC800_NMI_LOCKUP_VECTOR',0x0010:'RST10_LOAD_POINTERS',0x0018:'RST18_LCD_SERVICE',0x0020:'RST20_DOCUMENT_POINTERS',0x0028:'RST28_SET_INDICATOR',0x0038:'RST38_COMPARE_HL_DE',
      0x00e3:'OS_MAIN_LOOP',0x017e:'PERIODIC_SERVICE',0x01e7:'AUX_OUTPUT_SERVICE',0x0214:'AUX_SEND_CHAR',0x0238:'OS_COMMAND_LOOKUP',
      0x0288:'QUEUE_HANDLER_A',0x02d8:'QUEUE_HANDLER_B',0x035a:'KEY_SCAN',0x03aa:'KEY_TABLE_INDEX',0x03c6:'KEY_TRANSLATE_EVENT',
-     0x04c1:'DJ_ALT_SHORTCUT',0x04c6:'DJ_SHORTCUT',0x063d:'LCD_INIT_START',0x069e:'LCD_CHAR_OUTPUT',
+     0x04ad:'CHECKSUM_DOCUMENT_DIRECTORY',0x04ba:'CHECKSUM_PERSISTENT_SETTINGS',0x04c1:'DJ_ALT_SHORTCUT',0x04c6:'DJ_SHORTCUT',0x063d:'LCD_INIT_START',0x069e:'LCD_CHAR_OUTPUT',
      0x0742:'LCD_READ',0x0755:'LCD_TRANSLATE_OUTPUT',0x0760:'LCD_COMMAND',0x076c:'LCD_CONTROL_SHADOW',0x077d:'LCD_TRANSLATION',
-     0x0867:'LCD_MAIN_INIT',0x08cb:'DECODE_PACKED_MESSAGE',0x0925:'PACKED_READ_NIBBLE',0x09f0:'PACKED_MESSAGE_TO_RAM_4013',0x0885:'LCD_WAIT_READY',0x0896:'LCD_PATTERN_LOAD',0x0a34:'STATUS_SET_MASK',0x0a4a:'STATUS_CLEAR_MASK',
+     0x07e6:'LCD_SAVE_MODAL_SCREEN',0x0828:'LCD_RESTORE_MODAL_SCREEN',0x0867:'LCD_MAIN_INIT',0x08cb:'DECODE_PACKED_MESSAGE',0x0925:'PACKED_READ_NIBBLE',0x09f0:'PACKED_MESSAGE_TO_RAM_4013',0x0885:'LCD_WAIT_READY',0x0896:'LCD_PATTERN_LOAD',0x0a34:'STATUS_SET_MASK',0x0a4a:'STATUS_CLEAR_MASK',
      0x0a77:'STATUS_REFRESH_DOCUMENTS',0x0a9a:'STATUS_REFRESH_ALL',0x0af2:'OUTPUT_MODE_KEY',0x0b0c:'AUX_QUEUE_OUTPUT',0x0b46:'AUX_OUTPUT_STRING',0x0b5d:'AUX_OUTPUT_RULE',
-     0x1973:'SEND_LITERAL_ENTRY',0x1978:'SEND_SELECT_FILE',0x19a7:'SEND_START_SELECTED_RECORD',0x19c6:'SEND_FORMATTED_SETUP',0x1a29:'PARSE_FILE_FORMAT_LINE',0x1a66:'READ_NEXT_FORMAT_BYTE',0x1a7c:'SAVE_TOGGLE_AND_SELECT_FILE',0x1b1f:'SAVE_APPEND_STAGED_LINE',0x1b4a:'PROCESS_RECEIVED_QUEUE_EVENT',0x1bfe:'SERIAL_TX_PUMP',0x1c6d:'SEND_PROCESS_NEXT_CHARACTER',0x1ce4:'DOCUMENT_APPEND_UPDATE_LENGTH',0x1b7a:'ONLINE_ENQ_Y_ANSWERBACK',0x1c89:'SEND_CR_WITH_OPTIONAL_Z_FILE',0x0b6c:'RTC_RESET_AND_INITIALIZE',0x0b94:'RTC_REFRESH_DISPLAY_VALUES',0x0bcc:'RTC_READ_REGISTER',0x0bdb:'RTC_END_ACCESS',0x0be3:'RTC_WRITE_REGISTER',0x0bed:'RTC_SELECT_BANK',0x0bf5:'RTC_READ_TIME_BLOCK',0x0c28:'RTC_WRITE_TIME_BLOCK',0x0c2c:'RTC_WRITE_FIELDS',0x0d00:'RTC_INCREMENT_DATE_FIELD',0x0e75:'RTC_VALIDATE_CALENDAR_DATE',0x0ef6:'RTC_TEST_BCD_LEAP_YEAR',0x0f11:'STATUS_DIRECTION_INDICATOR',0x18a9:'SERIAL_RECEIVE_SERVICE',0x18ab:'SERIAL_READ_STATUS',0x18dc:'SERIAL_READ_CHAR',
+     0x1753:'CONFIG_FIND_OPTION',0x1839:'CONFIG_BIT_TEST',0x1973:'SEND_LITERAL_ENTRY',0x1978:'SEND_SELECT_FILE',0x19a7:'SEND_START_SELECTED_RECORD',0x19c6:'SEND_FORMATTED_SETUP',0x1a29:'PARSE_FILE_FORMAT_LINE',0x1a66:'READ_NEXT_FORMAT_BYTE',0x1a7c:'SAVE_TOGGLE_AND_SELECT_FILE',0x1b1f:'SAVE_APPEND_STAGED_LINE',0x1b4a:'PROCESS_RECEIVED_QUEUE_EVENT',0x1bfe:'SERIAL_TX_PUMP',0x1c6d:'SEND_PROCESS_NEXT_CHARACTER',0x1ce4:'DOCUMENT_APPEND_UPDATE_LENGTH',0x1b7a:'ONLINE_ENQ_Y_ANSWERBACK',0x1c89:'SEND_CR_WITH_OPTIONAL_Z_FILE',0x0b6c:'RTC_RESET_AND_INITIALIZE',0x0b94:'RTC_REFRESH_DISPLAY_VALUES',0x0bcc:'RTC_READ_REGISTER',0x0bdb:'RTC_END_ACCESS',0x0be3:'RTC_WRITE_REGISTER',0x0bed:'RTC_SELECT_BANK',0x0bf5:'RTC_READ_TIME_BLOCK',0x0c28:'RTC_WRITE_TIME_BLOCK',0x0c2c:'RTC_WRITE_FIELDS',0x0d00:'RTC_INCREMENT_DATE_FIELD',0x0e75:'RTC_VALIDATE_CALENDAR_DATE',0x0ef6:'RTC_TEST_BCD_LEAP_YEAR',0x0f11:'STATUS_DIRECTION_INDICATOR',0x18a9:'SERIAL_RECEIVE_SERVICE',0x18ab:'SERIAL_READ_STATUS',0x18dc:'SERIAL_READ_CHAR',
      0x1932:'SERIAL_XOFF_PATH',0x1c13:'TX_DEQUEUE',0x1c98:'SERIAL_SEND_CHAR',0x1ccc:'DOCUMENT_TX_INIT',
      0x1d14:'DOCUMENT_DIRECTORY_LOOKUP',0x1d32:'DIRECTORY_READ_ENTRY',0x1e80:'DOCUMENT_POOL_INIT',0x1f5f:'DIRECTORY_INDEX_TO_ADDRESS',
      0x21df:'AUX_OUTPUT_MEMORY',0x24b0:'EDITOR_UPDATE_POSITION',
@@ -210,6 +210,7 @@ def generate_source():
      0x0000:'CPU reset entry; U2 appears mapped at 0000h',
      0x0002:'Early output to port 47h (shared display/keyboard control)',
      0x000b:'Stack pointer set to 4800h; OS working-RAM layout must be reviewed for conflicts',
+     0x0074:'Cold-clear volatile working RAM 4000h..4591h by LDDR zero-copy; retained directory and settings remain intact',
      0x007e:'Write 06h to NSC800 internal interrupt control at BBh: enables RSTC and RSTB, masks RSTA/INTR',
      0x0180:'Write 00h to NSC800 internal interrupt control at BBh: masks all sources during service',
      0x021f:'Write 06h to NSC800 internal interrupt control at BBh: re-enable RSTC and RSTB',
@@ -240,6 +241,14 @@ def generate_source():
      0x0a4a:'Complement H/L and AND out bits from status shadow registers',
      0x0a77:'Document count at 4593h governs mask 0008h; candidate MEMORY indicator',
      0x0a9a:'Periodic refresh of firmware status indicators',
+     0x04ad:'XOR check 4593h..460Fh with checksum stored at 4610h; update checksum on return',
+     0x04ba:'XOR check 4611h..4656h with checksum stored at 4657h',
+     0x07e6:'Modal display save reads original 40-cell LCD screen, 20 pairs, stack holds characters',
+     0x0828:'Modal display restore writes 20 LCD character pairs; requires 40x2 update',
+     0x1753:'Find one of 17 configuration option descriptors at 185Eh using 9 group counts starting at 1855h',
+     0x1839:'Select config bit in retained RAM 4654h..4656h from third descriptor byte, output mask and toggled value',
+     0x0898:'Write 11 bytes per original 5x10 custom CGRAM character',
+     0x0830:'Restore 40 LCD character cells in 20 pairs (B=13h loop)',
      0x0b5d:'40 ASCII hyphens and CR emitted to auxiliary channel: printer-style formatting',
      0x1973:'CTL+SEND sets 451Fh=FFh bypassing format-line and special processing; manual p49',
      0x1978:'SHIFT+SEND selects named file; keycode 96h; literal 99h joins here',
@@ -274,7 +283,7 @@ def generate_source():
      0x1e80:'Initialize document pool at 4800h and compute usable RAM size',
     }
     # Special table/data descriptions for readable source, also includes true byte layout.
-    DATA_LABELS={0x0543:'DJ_SCRIPT_DATA',0x0565:'KB_NORMAL_TABLE',0x05ad:'KB_ALT_TABLE',0x05f5:'KB_SHIFT_TABLE',0x0653:'LCD_INIT_COMMANDS',0x0bbf:'RTC_INITIAL_VALUES',0x0c1b:'RTC_REGISTER_LIST',0x0e68:'MONTH_LENGTHS_BCD',0x0f7d:'COMMAND_DISPATCH_TABLE',0x10bf:'COMMAND_TABLE_TERMINATOR',0x0939:'PACKED_COMMON_CHARACTERS',0x0945:'PACKED_EXTENDED_CHARACTERS',0x096c:'PACKED_COMMON_PHRASES',0x10c0:'AUX_KEY_DISPATCH_TABLE',0x10dc:'AUX_KEY_DISPATCH_TABLE_2',0x10e9:'HELP_DATA_KEY_POINTERS',0x112f:'OS_VERSION_MESSAGE'}
+    DATA_LABELS={0x0543:'DJ_SCRIPT_DATA',0x0565:'KB_NORMAL_TABLE',0x05ad:'KB_ALT_TABLE',0x05f5:'KB_SHIFT_TABLE',0x066b:'LCD_CGRAM_BOOT_TABLE',0x0791:'LCD_CHARACTER_REMAP_TABLE',0x0ce2:'RTC_FIELD_DESCRIPTOR_TABLE',0x0e48:'RTC_SCREEN_LAYOUT_TABLE',0x1855:'CONFIGURATION_DESCRIPTOR_TABLE',0x298e:'CALCULATOR_KEY_REMAP_TABLE',0x0653:'LCD_INIT_COMMANDS',0x0bbf:'RTC_INITIAL_VALUES',0x0c1b:'RTC_REGISTER_LIST',0x0e68:'MONTH_LENGTHS_BCD',0x0f7d:'COMMAND_DISPATCH_TABLE',0x10bf:'COMMAND_TABLE_TERMINATOR',0x0939:'PACKED_COMMON_CHARACTERS',0x0945:'PACKED_EXTENDED_CHARACTERS',0x096c:'PACKED_COMMON_PHRASES',0x10c0:'AUX_KEY_DISPATCH_TABLE',0x10dc:'AUX_KEY_DISPATCH_TABLE_2',0x10e9:'HELP_DATA_KEY_POINTERS',0x112f:'OS_VERSION_MESSAGE'}
     # Subdivide packed command table into readable entries, and keyboard map into scan rows.
     groupstarts={}
     modestarts={}
@@ -292,6 +301,12 @@ def generate_source():
      0x05ad:'Second keycode layer: 72 entries',
      0x05f5:'Third keycode layer: 72 entries',
      0x0653:'HD44780 command table; original 34h,34h,01h,06h,0Eh,00h',
+     0x066b:'Four CGRAM start addresses followed by four 11-byte patterns for original 5x10 HD44780',
+     0x0791:'Twelve three-byte LCD character remaps and NUL terminator',
+     0x0ce2:'Clock edit field descriptors, record format not fully decoded',
+     0x0e48:'Calendar/alarm screen presentation descriptors',
+     0x1855:'Nine config row sizes totaling 17, then 17 three-byte descriptors from 185Eh',
+     0x298e:'Calculator remapping: 06 then six typed-character/result pairs q/w/e/r/i/t',
      0x0bbf:'13-byte default BCD data values for MM58167 registers, copied through 0C2Ch',
      0x0c1b:'13 MM58167 register offsets: 05 07 06 0A 09 04 03 02 0F 0C 0B 0D 0E',
      0x0e68:'Month length table (BCD); February permits 29 until leap-year validation',
