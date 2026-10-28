@@ -71,7 +71,8 @@ NSC800_RSTC_PERIODIC_VECTOR:
     ; NSC800 RSTC vector (002Ch) jumps to 017Eh periodic service; enabled by OUT (BBh),06h
     JP PERIODIC_SERVICE                        ; @002C  C3 7E 01          
     DB FFh                                      ; @002F  FF
-loc_0030:
+RST30_DISPLAY_PACKED_ROM_MESSAGE:
+    ; OS service: input HL=compressed ROM text; clear LCD; decode into RAM 4013h; display.
     JR loc_003E                                ; @0030  18 0C             
     DB FFh,FFh                                  ; @0032  FF FF
 NSC800_RSTB_C000_VECTOR:
@@ -89,7 +90,7 @@ RST38_COMPARE_HL_DE:
 loc_003E:
     RST 18h                                    ; @003E  DF                
 loc_003F:
-    CALL loc_09F0                              ; @003F  CD F0 09          
+    CALL PACKED_MESSAGE_TO_RAM_4013                              ; @003F  CD F0 09          
     JP loc_09D7                                ; @0042  C3 D7 09          
 loc_0045:
     RST 30h                                    ; @0045  F7                
@@ -1309,10 +1310,10 @@ loc_08AC:
     JR Z,loc_08C8                              ; @08B1  28 15             
     DEC B                                      ; @08B3  05                
 loc_08B4:
-    CALL loc_0925                              ; @08B4  CD 25 09          
+    CALL PACKED_READ_NIBBLE                              ; @08B4  CD 25 09          
     CP 0Dh                                     ; @08B7  FE 0D             
     JR C,loc_08BF                              ; @08B9  38 04             
-    CALL loc_0925                              ; @08BB  CD 25 09          
+    CALL PACKED_READ_NIBBLE                              ; @08BB  CD 25 09          
     XOR A                                      ; @08BE  AF                
 loc_08BF:
     CP 0Ch                                     ; @08BF  FE 0C             
@@ -1321,10 +1322,13 @@ loc_08BF:
     JR loc_08AC                                ; @08C6  18 E4             
 loc_08C8:
     CALL loc_08EB                              ; @08C8  CD EB 08          
-loc_08CB:
+DECODE_PACKED_MESSAGE:
+    ; Read high/low packed nibbles from (HL). 0-B=common character, C=end,
+    ; D-F+next nibble=extended character; F7-FE=frequent full phrases.
+    ; Output characters through DE; state flag is RAM 4508h.
     CALL loc_08F2                              ; @08CB  CD F2 08          
 loc_08CE:
-    CALL loc_0925                              ; @08CE  CD 25 09          
+    CALL PACKED_READ_NIBBLE                              ; @08CE  CD 25 09          
     CP 0Ch                                     ; @08D1  FE 0C             
     JR Z,loc_08EB                              ; @08D3  28 16             
     JR NC,loc_08F7                             ; @08D5  30 20             
@@ -1361,7 +1365,7 @@ loc_08F7:
     RLCA                                       ; @08FB  07                
     RLCA                                       ; @08FC  07                
     LD C,A                                     ; @08FD  4F                
-    CALL loc_0925                              ; @08FE  CD 25 09          
+    CALL PACKED_READ_NIBBLE                              ; @08FE  CD 25 09          
     PUSH HL                                    ; @0901  E5                
     CP 07h                                     ; @0902  FE 07             
     JR C,loc_08E5                              ; @0904  38 DF             
@@ -1388,7 +1392,8 @@ loc_091C:
     LD (DE),A                                  ; @0921  12                
     INC DE                                     ; @0922  13                
     JR loc_091C                                ; @0923  18 F7             
-loc_0925:
+PACKED_READ_NIBBLE:
+    ; Return one 4-bit code in A; alternates source byte's high/low nibbles.
     LD A,(4508h)                               ; @0925  3A 08 45          
     XOR FFh                                    ; @0928  EE FF             
     LD (4508h),A                               ; @092A  32 08 45          
@@ -1403,6 +1408,7 @@ loc_0925:
 loc_0936:
     AND 0Fh                                    ; @0936  E6 0F             
     RET                                        ; @0938  C9                
+    ; 0939h: common character dictionary. 0945h: extension table. 096Ch: frequent phrase strings.
     DB 20h,65h,69h,74h,6Eh,72h,6Fh,6Ch,61h,64h,73h,63h,68h,66h,70h,6Dh ; @0939  20 65 69 74 6E 72 6F 6C 61 64 73 63 68 66 70 6D   | eitnroladschfpm|
     DB 75h,62h,77h,79h,3Eh,67h,28h,29h,2Dh,76h,2Ah,6Bh,78h,2Ch,22h,3Fh ; @0949  75 62 77 79 3E 67 28 29 2D 76 2A 6B 78 2C 22 3F   |ubwy>g()-v*kx,"?|
     DB 2Fh,31h,32h,23h,30h,33h,6Ah,7Ah,2Eh,3Ch,34h,35h,37h,38h,39h,71h ; @0959  2F 31 32 23 30 33 6A 7A 2E 3C 34 35 37 38 39 71   |/12#03jz.<45789q|
@@ -1431,9 +1437,10 @@ loc_09EA:
     LD HL,4013h                                ; @09EA  21 13 40          
     RST 18h                                    ; @09ED  DF                
     JR loc_09DF                                ; @09EE  18 EF             
-loc_09F0:
+PACKED_MESSAGE_TO_RAM_4013:
+    ; Decode packed ROM text at HL into OS scratch buffer at 4013h.
     LD DE,4013h                                ; @09F0  11 13 40          
-    JP loc_08CB                                ; @09F3  C3 CB 08          
+    JP DECODE_PACKED_MESSAGE                                ; @09F3  C3 CB 08          
 loc_09F6:
     LD A,02h                                   ; @09F6  3E 02             
     JR loc_09FA                                ; @09F8  18 00             
@@ -2389,6 +2396,10 @@ ORG 1000h
     DB 04h,C0h,21h                              ; @10BC  04 C0 21   COMMAND 8Eh mode 04h -> loc_21C0
 COMMAND_TABLE_TERMINATOR:  ; Zero terminator for 29 groups and 88 command-mode mappings
     DB 00h                                      ; @10BF  00  Zero terminator for 29 groups and 88 command-mode mappings
+    ; 10C0h: nine keycode -> executable handler triples, used by 2986h/298Dh.
+    ; 10DCh: four additional keycode/pointer triples (caller not identified).
+    ; 10E9h: 23 keycode -> *data* pointer triples, used by 2003h (not executable).
+    ; 112Fh: compressed user-interface message pool begins with version string v2.1.
     DB 2Bh,1Ch,2Ah,2Dh,1Ch,2Ah,78h,1Ch,2Ah,FDh,1Ch,2Ah,3Dh,1Ch,2Ah,79h ; @10C0  2B 1C 2A 2D 1C 2A 78 1C 2A FD 1C 2A 3D 1C 2A 79   |+.*-.*x.*..*=.*y|
     DB E9h,29h,75h,ECh,29h,2Eh,D9h,29h,6Fh,A8h,2Ch,00h,2Bh,45h,2Ah,2Dh ; @10D0  E9 29 75 EC 29 2E D9 29 6F A8 2C 00 2B 45 2A 2D   |.)u.)..)o.,.+E*-|
     DB 43h,2Ah,78h,ADh,2Ah,FDh,61h,2Bh,00h,81h,96h,13h,82h,C5h,13h,83h ; @10E0  43 2A 78 AD 2A FD 61 2B 00 81 96 13 82 C5 13 83   |C*x.*.a+........|
@@ -3884,7 +3895,7 @@ loc_1F83:
     CALL loc_0A47                              ; @1F83  CD 47 0A          
     LD DE,4013h                                ; @1F86  11 13 40          
     LD HL,1336h                                ; @1F89  21 36 13          
-    CALL loc_08CB                              ; @1F8C  CD CB 08          
+    CALL DECODE_PACKED_MESSAGE                              ; @1F8C  CD CB 08          
     XOR A                                      ; @1F8F  AF                
     LD (DE),A                                  ; @1F90  12                
     LD A,(456Eh)                               ; @1F91  3A 6E 45          
@@ -3892,7 +3903,7 @@ loc_1F83:
     JP NZ,loc_1FA3                             ; @1F95  C2 A3 1F          
     LD DE,401Ch                                ; @1F98  11 1C 40          
     LD HL,134Fh                                ; @1F9B  21 4F 13          
-    CALL loc_08CB                              ; @1F9E  CD CB 08          
+    CALL DECODE_PACKED_MESSAGE                              ; @1F9E  CD CB 08          
     JR loc_1FBA                                ; @1FA1  18 17             
 loc_1FA3:
     CALL DIRECTORY_INDEX_TO_ADDRESS            ; @1FA3  CD 5F 1F          
@@ -4035,7 +4046,7 @@ loc_2072:
     CALL loc_016C                              ; @207E  CD 6C 01          
     CALL loc_0DAE                              ; @2081  CD AE 0D          
     LD HL,11CAh                                ; @2084  21 CA 11          
-    CALL loc_09F0                              ; @2087  CD F0 09          
+    CALL PACKED_MESSAGE_TO_RAM_4013                              ; @2087  CD F0 09          
     LD HL,11D0h                                ; @208A  21 D0 11          
     POP BC                                     ; @208D  C1                
     CALL loc_08AC                              ; @208E  CD AC 08          
