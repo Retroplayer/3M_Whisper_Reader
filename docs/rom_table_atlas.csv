@@ -1,0 +1,23 @@
+start_hex,end_exclusive_hex,size_bytes,name,encoding,rom,confidence
+0543,0565,34,DJ communications strings,fixed NUL-separated text,U2,high
+0565,063D,216,Keyboard three 72-entry maps,three x 72 bytes,U2,high
+0653,0659,6,HD44780 initialization,"six commands, NUL ending",U2,high
+066B,069B,48,Original LCD CGRAM glyphs,four address bytes then 4 x 11 row bytes,U2,high
+0791,07B6,37,LCD input character remapping,"12 x (input,low output,high output) + NUL",U2,high
+0939,0945,12,Packed UI common symbols,12-byte compact charset,U2,high
+0945,096C,39,Packed UI extended symbols,39-byte extended charset,U2,high
+096C,09D6,106,Packed UI phrase dictionary,NUL-separated common phrases,U2,high
+0BBF,0BCC,13,RTC default BCD values,"13-byte initialization record (19h,83h year)",U2,high
+0C1B,0C28,13,RTC register ordering,13 one-byte MM58167 register indexes,U2,high
+0CE2,0D01,31,Clock/calendar editing descriptors,mixed-width field descriptors (still needs complete parser trace),U2,medium
+0E48,0E68,32,Clock/alarm screen assembly descriptors,compact presentation data (not entirely decoded),U2,medium
+0E68,0E75,13,Month length lookup,13 bytes (sentinel and 12 BCD lengths),U2,high
+0F7D,10BF,322,OS command-mode dispatch,"29 groups, 88 mode/handler entries",U2/U3,high
+10C0,10DC,28,Secondary key handler pointers,nine 3-byte key+address triples + end,U3,high
+10DC,10E9,13,Secondary key pointer table,four key+address triples + end; caller unresolved,U3,medium
+10E9,112F,70,HELP key-to-message pointers,23 key+data-pointer triples + terminator,U3,high
+112F,163E,1295,Packed UI and help messages,nibble-coded variable-length records with padding,U3,high
+1855,185E,9,Configuration row counts,nine counts; sum=17,U3,high
+185E,1891,51,Configuration option descriptors,"17 x (display offset,value text ID,config bit index)",U3,high
+1A75,1A7C,7,PC/PX format-line parser options,two 3-byte option+RAM-pointer triples + NUL,U3,high
+298E,29B0,34,Editor/UI special key text,mixed packed data; needs caller trace,U4,low
