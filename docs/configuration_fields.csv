@@ -1,0 +1,18 @@
+group,option_in_group,setting,descriptor_rom,screen_offset,value_text_index,config_bit_index,config_ram,config_bit,mask
+0,0,terminal configuration,185E,18,00,7,4654,7,80
+1,0,parity,1861,07,02,2,4654,2,04
+1,1,inhibit,1864,15,04,3,4654,3,08
+1,2,error detection,1867,24,04,5,4654,5,20
+2,0,character data bits,186A,14,06,1,4654,1,02
+2,1,modem speed,186D,22,08,4,4654,4,10
+3,0,duplex,1870,07,0A,6,4654,6,40
+3,1,control characters,1873,24,04,8,4655,0,01
+4,0,alpha keyboard,1876,10,0C,16,4656,0,01
+4,1,beeper,1879,24,04,17,4656,1,02
+5,0,end-of-line sequence,187C,18,0E,18,4656,2,04
+6,0,transmit XON mode,187F,14,10,9,4655,1,02
+6,1,transmit automatic mode,1882,1A,12,10,4655,2,04
+7,0,login date/time,1885,11,04,19,4656,3,08
+7,1,answer-back,1888,24,04,20,4656,4,10
+8,0,network selection,188B,0F,14,21,4656,5,20
+8,1,clock mode,188E,22,16,22,4656,6,40
