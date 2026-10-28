@@ -49,3 +49,40 @@ The firmware probes writable RAM dynamically. A ROM placed in a socket normally 
 6. Is the customer-option UV EPROM in the German example a table, code, or a customer-specific main-ROM modification?
 
 No unsupported pinout or OS loader should be assumed.
+
+
+## Kernel-facing ROM services (additional disassembly)
+
+The ROM dedicates several NSC800/Z80 restart vectors to callable OS services. These are actual instruction entrypoints; register preservation still needs a complete ABI audit.
+
+| Entry | ROM operation | Parameters/results identified |
+| --- | --- | --- |
+| \`RST 08h\` (\`0008h\`) | Jump to \`0879h\`, set LCD logical cursor state and send DDRAM address | Input A is cursor address, ORed with \`80h\` for HD44780 command |
+| \`RST 10h\` (\`0010h\`) | Read 16-bit OS state registers | Output HL = \`(4654h)\`, DE = \`(4656h)\` |
+| \`RST 18h\` (\`0018h\`) | Reset/clear text LCD viewport via \`0867h\` | Altered display/cursor state |
+| \`RST 20h\` (\`0020h\`) | Read document pointers | Output DE = \`(4594h)\`, HL = \`(4669h)\` |
+| \`RST 28h\` (\`0028h\`) | Set bits in software indicator shadows and hardware output latches through \`0A34h\` | Input HL = 16-bit set mask |
+| \`RST 30h\` (\`0030h\`) | Display nibble-compressed ROM message | Input HL = compressed text address; scratch buffer \`4013h\` |
+| \`RST 38h\` (\`0038h\`) | Compare 16-bit HL against DE and set flags | \`CP H\` followed by \`CP L\` if upper bytes match; do not treat as full ordering compare without further flags audit |
+
+**Important:** NSC800 hardware interrupts are fixed at \`002Ch\` (RSTC) and \`0034h\` (RSTB), separate from these software restart services. Interrupt control \`OUT (BBh),06h\` enables both. The RSTB entry jumps to \`C000h\`, but no loaded code or external memory map at that location has been established.
+
+### Packed-text OS UI
+
+- \`08CBh\`: nibble-packed message decoder, using character tables \`0939h\`/\`0945h\` and eight shared phrases beginning \`096Ch\`.
+- \`0925h\`: reads alternating high and low four-bit symbols, tracking nibble state at \`4508h\`.
+- \`09F0h\`: sets \`DE=4013h\` and starts decoding text pointed to by HL.
+- The boot path displays the ROM's version string \`v2.1\` at \`112Fh\`; command menus and help messages use the same compressed-text interface.
+- In the Dow Jones path, UI prompts select \`djns pwd\` (ROM \`1134h\`, RAM string \`4611h\`) or \`user pwd\` (ROM \`113Bh\`, RAM string \`462Fh\`). Distinct on-device credential buffers are proven; remote authentication behavior remains to be traced.
+
+### Additional lookup tables and code-execution restrictions
+
+A simpler lookup at \`027Bh\` uses three-byte entries \`[keycode, little-endian pointer]\`. It serves several purposes:
+
+- \`10C0h–10DBh\`: nine executable function pointers, called from \`2986h\` then executed through \`JP (HL)\` at \`298Dh\`.
+- \`10DCh–10E8h\`: four similar entries, direct caller not yet found.
+- \`10E9h–112Eh\`: 23 *data pointers*, selected at \`2003h\`. The caller reads \`(HL)\` at \`200Bh\` rather than jumping to it.
+
+Ten known \`JP (HL)\` instructions have been checked; their traced callers use the OS command resolver or these ROM tables. **No generic arbitrary-RAM program loader has yet been demonstrated.** The only verified jump beyond the standard ROM+RAM map is the interrupt vector \`JP C000h\`; the physical bus decoder still needs tracing.
+
+See [OS message decoding and dispatch analysis](OS_message_and_dispatch_analysis.md), [message index](LEX31_OS_messages.csv), and [message decoder](../tools/decode_messages.py).
