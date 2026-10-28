@@ -1,0 +1,35 @@
+callsite,address,bytes_consumed,text,nearby_operations
+00D9,112F,5,v2.1,"CALL loc_0045 LD HL,0002h RST 28h OS_MAIN_LOOP:"
+2404,112F,5,v2.1,CALL loc_0045 JP loc_0CDC loc_240D: XOR A
+2711,1134,7,djns pwd ,"CALL loc_003F LD DE,4611h JR loc_2725 loc_271C:"
+271C,113B,7,user pwd ,"CALL loc_003F LD DE,462Fh loc_2725: LD HL,403Bh"
+2731,1142,7,search =>,"CALL loc_003F loc_2737: LD HL,4058h XOR A"
+014D,1149,6,violation,"RST 30h LD A,01h OUT (63h),A DI"
+0F61,11BA,8,"press ""xit""",CALL loc_003F loc_0F67: CALL loc_016C CALL loc_0A64
+1EBC,11C2,8,factory reset,"JP loc_0045 loc_1EC2: LD HL,130Bh RST 30h"
+2084,11CA,6,battery ,"CALL loc_09F0 LD HL,11D0h POP BC CALL loc_08AC"
+2295,12DF,3,edit,"CALL loc_0045 CALL loc_26E5 LD (4667h),HL CALL loc_247A"
+2516,12E2,7,text-full,RST 30h CALL loc_016C CALL loc_0A64 JP loc_0CDC
+2885,12E9,6,not found,RST 30h CALL loc_0A64 JR loc_282D loc_288E:
+226A,12EF,10,"  found  file "" ""","loc_226D: RST 30h LD A,0Fh RST 08h"
+1AF4,12F9,9,"created  file "" ""","RST 30h LD A,0Fh RST 08h POP AF"
+1AEB,1302,9,directory full,"CALL loc_0045 JP loc_0CDC loc_1AF4: LD HL,12F9h"
+1EFF,1302,9,directory full,RST 30h CALL loc_016C JP loc_0A64 loc_1F09:
+2289,1302,9,directory full,RST 30h CALL loc_016C CALL loc_0A64 JR loc_2246
+1EC2,130B,6,new label,RST 30h loc_1EC6: CALL loc_1B01 RET Z
+1EF6,1311,9,already defined,RST 30h CALL loc_0A64 JR loc_1EC2 loc_1EFF:
+0474,1327,15,are you sure (y or n)?,"CALL loc_003F loc_047A: CALL loc_0494 JR Z,loc_047A"
+1F89,1336,25,index==> label=  size=      free=     ,"CALL loc_08CB XOR A LD (DE),A LD A,(456Eh)"
+1F9B,134F,8,      memory       ,CALL loc_08CB JR loc_1FBA loc_1FA3: CALL DIRECTORY_INDEX_TO_ADDRESS
+19F2,1357,11," file "" "" not found","RST 30h LD A,07h RST 08h POP AF"
+1AE1,1362,7,save ready,RST 30h JR loc_1AD3 loc_1AE7: POP AF
+1AA2,1369,18,"found  file "" "", clear (y/n)","RST 30h LD A,0Dh RST 08h POP AF"
+1AC6,137B,9," file "" "" cleared","RST 30h LD A,07h RST 08h LD A,(4598h)"
+19EB,1384,4,no data,RST 30h JR loc_19FD loc_19F1: PUSH BC
+1A10,1388,14,"already sending memory "" ""","RST 30h LD A,18h RST 08h LD A,(4592h)"
+1646,152A,17,set mode==> configuration  clock  alarm,"CALL loc_003F XOR A LD (4502h),A LD A,0Ch"
+198A,15B1,4,select a file,"RST 30h CALL loc_1B01 JR Z,loc_196C LD B,A"
+1A8C,15B1,4,select a file,"RST 30h loc_1A90: CALL loc_1B01 JR C,loc_1A90"
+2253,15B1,4,select a file,"RST 30h CALL loc_1B01 JP C,loc_28C9 JP Z,loc_2404"
+1FF0,162B,13,help ==> select key press XIT when done,CALL loc_003F CALL loc_0A47 loc_1FF9: CALL loc_0491
+203A,1638,6,data key,CALL loc_003F CALL loc_0A64 JR loc_1FED loc_2045:
