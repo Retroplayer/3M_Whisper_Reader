@@ -100,3 +100,10 @@ This establishes that `017Eh` **is entered from the NSC800 RSTC interrupt vector
 ## Source verification
 
 Annotated assembly generated from original dumps, 4620 identified instruction starts, 8641 executable bytes / 3647 explicit data bytes. Reassembling with the repository's source verifier yields SHA-256 `0b395efd163f70127adfdbd5b234e1f5ee5ff490c8e7386b5c7f5b9faa4b6b12`, identical to the three concatenated original EPROMs. This verifies faithful source coverage, not every semantic interpretation.
+## Calendar storage and leap-year code (U2)
+
+A further ROM trace identifies how the machine supports a year despite the MM58167 having no year counter. The 13-byte register list at `0C1Bh` includes auxiliary RTC RAM registers `0Ah` and `09h` as its fourth and fifth entries; the read routine `0BF5h` places their values at `465Bh` and `465Ch`. The factory-initialization bytes at `0BBFh` assign `19h` and `83h` to those entries, strongly indicating **1983**.
+
+The BCD month-length table at `0E68h` stores `FF,31,29,31,30,31,30,31,31,30,31,30,31`. The routine at `0E75h` validates the day/month and calls `0EF6h`, which tests the low BCD year byte at `465Ch` for divisibility by four and selects February 28 or 29. It does **not** account for century exceptions (e.g. 2100), appropriate for an early-1980s device. The high and low year bytes appear to be stored in the RTC's comparator/alarm RAM rather than in a hardware calendar register. Exact downstream year rollover behavior still requires following the clock update service.
+
+Related source labels: `RTC_INITIAL_VALUES` (0BBFh), `RTC_REGISTER_LIST` (0C1Bh), `MONTH_LENGTHS_BCD` (0E68h), `RTC_VALIDATE_CALENDAR_DATE` (0E75h), and `RTC_TEST_BCD_LEAP_YEAR` (0EF6h).
