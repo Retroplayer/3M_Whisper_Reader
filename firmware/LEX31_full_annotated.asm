@@ -225,7 +225,7 @@ loc_011A:
     LD A,B                                     ; @011A  78                
     CALL loc_02BA                              ; @011B  CD BA 02          
 loc_011E:
-    CALL loc_1B4A                              ; @011E  CD 4A 1B          
+    CALL PROCESS_RECEIVED_QUEUE_EVENT                              ; @011E  CD 4A 1B          
     LD A,(451Fh)                               ; @0121  3A 1F 45          
     OR A                                       ; @0124  B7                
     JR Z,OS_MAIN_LOOP                          ; @0125  28 BC             
@@ -305,7 +305,7 @@ PERIODIC_SERVICE:
     DEC HL                                     ; @0195  2B                
     LD (4528h),HL                              ; @0196  22 28 45          
 loc_0199:
-    CALL Z,loc_1BFE                            ; @0199  CC FE 1B          
+    CALL Z,SERIAL_TX_PUMP                            ; @0199  CC FE 1B          
     LD HL,(4505h)                              ; @019C  2A 05 45          
     LD A,H                                     ; @019F  7C                
     OR L                                       ; @01A0  B5                
@@ -2285,13 +2285,13 @@ COMMAND_DISPATCH_TABLE:  ; Packed keycode/mode/target records; U2/U3 boundary bi
     DB 0Ah,06h,28h                              ; @0F9E  0A 06 28   COMMAND 8Fh mode 0Ah -> loc_2806
     DB 0Bh,06h,28h                              ; @0FA1  0B 06 28   COMMAND 8Fh mode 0Bh -> loc_2806
     DB 99h,02h                                  ; @0FA4  99 02   COMMAND 99h: 2 mode(s)
-    DB 03h,73h,19h                              ; @0FA6  03 73 19   COMMAND 99h mode 03h -> loc_1973
-    DB 00h,73h,19h                              ; @0FA9  00 73 19   COMMAND 99h mode 00h -> loc_1973
+    DB 03h,73h,19h                              ; @0FA6  03 73 19   COMMAND 99h mode 03h -> SEND_LITERAL_ENTRY
+    DB 00h,73h,19h                              ; @0FA9  00 73 19   COMMAND 99h mode 00h -> SEND_LITERAL_ENTRY
     DB 96h,02h                                  ; @0FAC  96 02   COMMAND 96h: 2 mode(s)
-    DB 03h,78h,19h                              ; @0FAE  03 78 19   COMMAND 96h mode 03h -> loc_1978
-    DB 00h,78h,19h                              ; @0FB1  00 78 19   COMMAND 96h mode 00h -> loc_1978
+    DB 03h,78h,19h                              ; @0FAE  03 78 19   COMMAND 96h mode 03h -> SEND_SELECT_FILE
+    DB 00h,78h,19h                              ; @0FB1  00 78 19   COMMAND 96h mode 00h -> SEND_SELECT_FILE
     DB 97h,01h                                  ; @0FB4  97 01   COMMAND 97h: 1 mode(s)
-    DB 00h,7Ch,1Ah                              ; @0FB6  00 7C 1A   COMMAND 97h mode 00h -> loc_1A7C
+    DB 00h,7Ch,1Ah                              ; @0FB6  00 7C 1A   COMMAND 97h mode 00h -> SAVE_TOGGLE_AND_SELECT_FILE
     DB 80h,01h                                  ; @0FB9  80 01   COMMAND 80h: 1 mode(s)
     DB 00h,C6h,04h                              ; @0FBB  00 C6 04   COMMAND 80h mode 00h -> DJ_SHORTCUT
     DB C0h,01h                                  ; @0FBE  C0 01   COMMAND C0h: 1 mode(s)
@@ -2847,7 +2847,7 @@ loc_1891:
     JR Z,loc_18A2                              ; @1899  28 07             
     LD A,(4586h)                               ; @189B  3A 86 45          
     LD (DE),A                                  ; @189E  12                
-    JP loc_1CE4                                ; @189F  C3 E4 1C          
+    JP DOCUMENT_APPEND_UPDATE_LENGTH                                ; @189F  C3 E4 1C          
 loc_18A2:
     XOR A                                      ; @18A2  AF                
     LD (4514h),A                               ; @18A3  32 14 45          
@@ -2886,6 +2886,7 @@ SERIAL_READ_CHAR:
     IN A,(5Bh)                                 ; @18DC  DB 5B             
     AND C                                      ; @18DE  A1                
     LD B,A                                     ; @18DF  47                
+    ; PX matches received byte: clear transmit-hold at 4517h.
     LD A,(4525h)                               ; @18E0  3A 25 45          
     XOR B                                      ; @18E3  A8                
     JR NZ,loc_18E9                             ; @18E4  20 03             
@@ -2967,11 +2968,13 @@ loc_196C:
     XOR A                                      ; @196C  AF                
     LD (451Fh),A                               ; @196D  32 1F 45          
     JP loc_0CDC                                ; @1970  C3 DC 0C          
-loc_1973:
+SEND_LITERAL_ENTRY:
+    ; CTL+SEND sets 451Fh=FFh, bypassing format line / PC/PX/Z, before joining normal SEND selection (manual p.49).
     ; Dispatched for keycode/mode: 99/00, 99/03
     LD A,FFh                                   ; @1973  3E FF             
     LD (451Fh),A                               ; @1975  32 1F 45          
-loc_1978:
+SEND_SELECT_FILE:
+    ; SHIFT+SEND selects file and starts transmission; literal CTL+SEND joins here.
     ; Dispatched for keycode/mode: 96/00, 96/03
     RST 10h                                    ; @1978  D7                
     LD (466Ch),HL                              ; @1979  22 6C 46          
@@ -2996,7 +2999,8 @@ loc_19A0:
     CALL DOCUMENT_DIRECTORY_LOOKUP             ; @19A1  CD 14 1D          
     LD B,C                                     ; @19A4  41                
     JR Z,loc_19F1                              ; @19A5  28 4A             
-loc_19A7:
+SEND_START_SELECTED_RECORD:
+    ; Directory entry +2=start pointer, +4=length. Literal: 4521h/4523h; formatted: 451Bh/451Dh.
     PUSH BC                                    ; @19A7  C5                
     INC HL                                     ; @19A8  23                
     INC HL                                     ; @19A9  23                
@@ -3014,12 +3018,13 @@ loc_19A7:
     LD H,B                                     ; @19B6  60                
     LD A,(451Fh)                               ; @19B7  3A 1F 45          
     OR A                                       ; @19BA  B7                
-    JR Z,loc_19C6                              ; @19BB  28 09             
+    JR Z,SEND_FORMATTED_SETUP                              ; @19BB  28 09             
     LD (4521h),DE                              ; @19BD  ED 53 21 45       
     LD (4523h),HL                              ; @19C1  22 23 45          
     JR loc_19D9                                ; @19C4  18 13             
-loc_19C6:
-    CALL loc_1A29                              ; @19C6  CD 29 1A          
+SEND_FORMATTED_SETUP:
+    ; Formatted SEND calls optional ESC format-line parser then sends payload starting after header.
+    CALL PARSE_FILE_FORMAT_LINE                              ; @19C6  CD 29 1A          
     JR Z,loc_19E1                              ; @19C9  28 16             
     LD (451Bh),HL                              ; @19CB  22 1B 45          
     LD DE,(452Bh)                              ; @19CE  ED 5B 2B 45       
@@ -3071,7 +3076,8 @@ loc_1A06:
     CALL loc_0828                              ; @1A24  CD 28 08          
     POP AF                                     ; @1A27  F1                
     RET                                        ; @1A28  C9                
-loc_1A29:
+PARSE_FILE_FORMAT_LINE:
+    ; DE=start, HL=length; after ESC 1Bh parse pX=char -> 4525h, pC=char -> 4526h.
     ADD HL,DE                                  ; @1A29  19                
     LD (452Bh),HL                              ; @1A2A  22 2B 45          
     EX DE,HL                                   ; @1A2D  EB                
@@ -3080,11 +3086,11 @@ loc_1A29:
     RET NZ                                     ; @1A31  C0                
     INC HL                                     ; @1A32  23                
 loc_1A33:
-    CALL loc_1A66                              ; @1A33  CD 66 1A          
+    CALL READ_NEXT_FORMAT_BYTE                              ; @1A33  CD 66 1A          
     CALL loc_0051                              ; @1A36  CD 51 00          
     CP 70h                                     ; @1A39  FE 70             
     JR NZ,loc_1A33                             ; @1A3B  20 F6             
-    CALL loc_1A66                              ; @1A3D  CD 66 1A          
+    CALL READ_NEXT_FORMAT_BYTE                              ; @1A3D  CD 66 1A          
     CALL loc_0051                              ; @1A40  CD 51 00          
     LD DE,1A75h                                ; @1A43  11 75 1A          
     LD B,A                                     ; @1A46  47                
@@ -3105,13 +3111,14 @@ loc_1A53:
     LD B,(HL)                                  ; @1A56  46                
     INC HL                                     ; @1A57  23                
     EX DE,HL                                   ; @1A58  EB                
-    CALL loc_1A66                              ; @1A59  CD 66 1A          
+    CALL READ_NEXT_FORMAT_BYTE                              ; @1A59  CD 66 1A          
     CP 3Dh                                     ; @1A5C  FE 3D             
     JR NZ,loc_1A33                             ; @1A5E  20 D3             
-    CALL loc_1A66                              ; @1A60  CD 66 1A          
+    CALL READ_NEXT_FORMAT_BYTE                              ; @1A60  CD 66 1A          
     LD (BC),A                                  ; @1A63  02                
     JR loc_1A33                                ; @1A64  18 CD             
-loc_1A66:
+READ_NEXT_FORMAT_BYTE:
+    ; Read format-line byte until CR or end pointer at 452Bh.
     LD DE,(452Bh)                              ; @1A66  ED 5B 2B 45       
     RST 38h                                    ; @1A6A  FF                
     JR Z,loc_1A72                              ; @1A6B  28 05             
@@ -3123,14 +3130,17 @@ loc_1A72:
     POP DE                                     ; @1A72  D1                
     OR A                                       ; @1A73  B7                
     RET                                        ; @1A74  C9                
+FILE_FORMAT_OPTION_TABLE:
+    ; [option letter, destination low, destination high]: x -> 4525h (PX); c -> 4526h (PC); 00 terminator.
     DB 78h,25h,45h,63h,26h,45h,00h              ; @1A75  78 25 45 63 26 45 00   |x%Ec&E.|
-loc_1A7C:
+SAVE_TOGGLE_AND_SELECT_FILE:
+    ; SHIFT+SAVE starts/stops receive-to-file. 4514h=FFh indicates active; prompts for single-character filename.
     ; Dispatched for keycode/mode: 97/00
     LD HL,4514h                                ; @1A7C  21 14 45          
     LD A,(HL)                                  ; @1A7F  7E                
     LD (HL),00h                                ; @1A80  36 00             
     OR A                                       ; @1A82  B7                
-    JP M,loc_1B1F                              ; @1A83  FA 1F 1B          
+    JP M,SAVE_APPEND_STAGED_LINE                              ; @1A83  FA 1F 1B          
     CALL loc_1A06                              ; @1A86  CD 06 1A          
     CALL loc_07E6                              ; @1A89  CD E6 07          
     LD HL,15B1h                                ; @1A8C  21 B1 15          
@@ -3168,7 +3178,7 @@ loc_1A90:
     LD A,(4598h)                               ; @1ACD  3A 98 45          
     CALL LCD_CHAR_OUTPUT                       ; @1AD0  CD 9E 06          
 loc_1AD3:
-    CALL loc_1B1F                              ; @1AD3  CD 1F 1B          
+    CALL SAVE_APPEND_STAGED_LINE                              ; @1AD3  CD 1F 1B          
     LD A,FFh                                   ; @1AD6  3E FF             
     LD (4514h),A                               ; @1AD8  32 14 45          
     CALL loc_0A64                              ; @1ADB  CD 64 0A          
@@ -3211,7 +3221,8 @@ loc_1B01:
 loc_1B1D:
     OR A                                       ; @1B1D  B7                
     RET                                        ; @1B1E  C9                
-loc_1B1F:
+SAVE_APPEND_STAGED_LINE:
+    ; Write staged NUL-terminated line at RAM 4013h to end-of-file at 4594h; append CR; update directory length/free bytes.
     RST 10h                                    ; @1B1F  D7                
     BIT 3,E                                    ; @1B20  CB 5B             
     RET Z                                      ; @1B22  C8                
@@ -3230,13 +3241,14 @@ loc_1B37:
     OR A                                       ; @1B3B  B7                
     JR Z,loc_1B45                              ; @1B3C  28 07             
     LD (HL),A                                  ; @1B3E  77                
-    CALL loc_1CE4                              ; @1B3F  CD E4 1C          
+    CALL DOCUMENT_APPEND_UPDATE_LENGTH                              ; @1B3F  CD E4 1C          
     INC DE                                     ; @1B42  13                
     JR loc_1B37                                ; @1B43  18 F2             
 loc_1B45:
     LD (HL),0Dh                                ; @1B45  36 0D             
-    JP loc_1CE4                                ; @1B47  C3 E4 1C          
-loc_1B4A:
+    JP DOCUMENT_APPEND_UPDATE_LENGTH                                ; @1B47  C3 E4 1C          
+PROCESS_RECEIVED_QUEUE_EVENT:
+    ; Drain received character queue, process ENQ/Y, display characters, stage/save complete lines.
     CALL loc_04A1                              ; @1B4A  CD A1 04          
     RET Z                                      ; @1B4D  C8                
     CALL ONLINE_ENQ_Y_ANSWERBACK                              ; @1B4E  CD 7A 1B          
@@ -3289,7 +3301,7 @@ ONLINE_ENQ_Y_ANSWERBACK:
     POP AF                                     ; @1B91  F1                
     XOR A                                      ; @1B92  AF                
     CALL loc_07E6                              ; @1B93  CD E6 07          
-    JP loc_19A7                                ; @1B96  C3 A7 19          
+    JP SEND_START_SELECTED_RECORD                                ; @1B96  C3 A7 19          
 loc_1B99:
     LD HL,(451Dh)                              ; @1B99  2A 1D 45          
     LD A,H                                     ; @1B9C  7C                
@@ -3300,7 +3312,7 @@ loc_1B99:
     JR NZ,loc_1B58                             ; @1BA3  20 B3             
     LD A,(4514h)                               ; @1BA5  3A 14 45          
     OR A                                       ; @1BA8  B7                
-    CALL Z,loc_1B1F                            ; @1BA9  CC 1F 1B          
+    CALL Z,SAVE_APPEND_STAGED_LINE                            ; @1BA9  CC 1F 1B          
     LD A,FFh                                   ; @1BAC  3E FF             
     LD (4514h),A                               ; @1BAE  32 14 45          
     RET                                        ; @1BB1  C9                
@@ -3320,7 +3332,7 @@ loc_1BB2:
 loc_1BC8:
     XOR A                                      ; @1BC8  AF                
     LD (4514h),A                               ; @1BC9  32 14 45          
-    CALL loc_1B1F                              ; @1BCC  CD 1F 1B          
+    CALL SAVE_APPEND_STAGED_LINE                              ; @1BCC  CD 1F 1B          
     JP loc_0448                                ; @1BCF  C3 48 04          
 loc_1BD2:
     LD B,26h                                   ; @1BD2  06 26             
@@ -3354,7 +3366,8 @@ loc_1BF0:
     POP AF                                     ; @1BFB  F1                
     RST 08h                                    ; @1BFC  CF                
     RET                                        ; @1BFD  C9                
-loc_1BFE:
+SERIAL_TX_PUMP:
+    ; Periodic transmit when hardware ready and pause flag 4517h=0; source from queue or document.
     IN A,(5Fh)                                 ; @1BFE  DB 5F             
     BIT 2,A                                    ; @1C00  CB 57             
     RET Z                                      ; @1C02  C8                
@@ -3365,7 +3378,7 @@ loc_1BFE:
     RET NZ                                     ; @1C0A  C0                
     LD HL,4464h                                ; @1C0B  21 64 44          
     CALL QUEUE_HANDLER_B                       ; @1C0E  CD D8 02          
-    JR NZ,loc_1C6D                             ; @1C11  20 5A             
+    JR NZ,SEND_PROCESS_NEXT_CHARACTER                             ; @1C11  20 5A             
 TX_DEQUEUE:
     LD HL,(4523h)                              ; @1C13  2A 23 45          
     LD A,H                                     ; @1C16  7C                
@@ -3419,19 +3432,23 @@ loc_1C60:
     LD (HL),00h                                ; @1C67  36 00             
     LD C,0Dh                                   ; @1C69  0E 0D             
     JR loc_1CA1                                ; @1C6B  18 34             
-loc_1C6D:
+SEND_PROCESS_NEXT_CHARACTER:
+    ; 451Fh !=0 literal sends byte without PC or file Z transforms; formatted mode interprets both.
     LD C,A                                     ; @1C6D  4F                
+    ; Literal (451Fh nonzero) bypasses PC and CR->Z transformation; modem-wide flow control remains.
     LD A,(451Fh)                               ; @1C6E  3A 1F 45          
     OR A                                       ; @1C71  B7                
     JR NZ,loc_1C97                             ; @1C72  20 23             
     LD A,0Dh                                   ; @1C74  3E 0D             
     CP C                                       ; @1C76  B9                
     JR Z,SEND_CR_WITH_OPTIONAL_Z_FILE                              ; @1C77  28 10             
+    ; PC matches outgoing byte: discard it and start 0271h-tick pause at 4528h.
     LD A,(4526h)                               ; @1C79  3A 26 45          
     OR A                                       ; @1C7C  B7                
     JR Z,loc_1C97                              ; @1C7D  28 18             
     CP C                                       ; @1C7F  B9                
     JR NZ,loc_1C97                             ; @1C80  20 15             
+    ; 0x0271=625 interrupt countdown ticks; manual calls programmed pause 5 seconds.
     LD HL,0271h                                ; @1C82  21 71 02          
     LD (4528h),HL                              ; @1C85  22 28 45          
     RET                                        ; @1C88  C9                
@@ -3496,7 +3513,8 @@ DOCUMENT_TX_INIT:
     LD D,(HL)                                  ; @1CDC  56                
     LD (4523h),DE                              ; @1CDD  ED 53 23 45       
     JP TX_DEQUEUE                              ; @1CE1  C3 13 1C          
-loc_1CE4:
+DOCUMENT_APPEND_UPDATE_LENGTH:
+    ; Advance document length at 459Ch and end pointer 4594h, decrement free count at 4596h.
     LD HL,(459Ch)                              ; @1CE4  2A 9C 45          
     INC HL                                     ; @1CE7  23                
     LD (459Ch),HL                              ; @1CE8  22 9C 45          
@@ -4340,7 +4358,7 @@ loc_226D:
     XOR A                                      ; @2278  AF                
     CP (HL)                                    ; @2279  BE                
     LD (HL),A                                  ; @227A  77                
-    CALL NZ,loc_1B1F                           ; @227B  C4 1F 1B          
+    CALL NZ,SAVE_APPEND_STAGED_LINE                           ; @227B  C4 1F 1B          
     CALL loc_0A64                              ; @227E  CD 64 0A          
     JR loc_2295                                ; @2281  18 12             
 loc_2283:
@@ -4546,7 +4564,7 @@ loc_23C0:
     CALL loc_23D0                              ; @23CA  CD D0 23          
     JP loc_2466                                ; @23CD  C3 66 24          
 loc_23D0:
-    CALL loc_1CE4                              ; @23D0  CD E4 1C          
+    CALL DOCUMENT_APPEND_UPDATE_LENGTH                              ; @23D0  CD E4 1C          
 loc_23D3:
     LD HL,4004h                                ; @23D3  21 04 40          
     LD A,28h                                   ; @23D6  3E 28             

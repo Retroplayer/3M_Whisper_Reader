@@ -141,7 +141,7 @@ def decode(pc):
 
 def generate_source():
     # Known literal data regions: no speculative disassembly may cross these.
-    DATA=[(0x0543,0x0565,'DJ_DIAL_STRINGS'),(0x0565,0x063d,'KEYBOARD_TABLES'),(0x0653,0x0659,'LCD_INIT_TABLE'),(0x0bbf,0x0bcc,'RTC_INIT_BCD_VALUES'),(0x0c1b,0x0c28,'RTC_REGISTER_SEQUENCE'),(0x0e68,0x0e75,'MONTH_LENGTH_TABLE'),(0x0939,0x096c,'PACKED_CHARSET'),(0x096c,0x09d6,'PACKED_PHRASES'),(0x0f7d,0x10c0,'COMMAND_TABLE'),(0x10c0,0x112f,'SECONDARY_LOOKUP_TABLES'),(0x112f,0x163e,'PACKED_UI_DATA')]
+    DATA=[(0x0543,0x0565,'DJ_DIAL_STRINGS'),(0x0565,0x063d,'KEYBOARD_TABLES'),(0x0653,0x0659,'LCD_INIT_TABLE'),(0x0bbf,0x0bcc,'RTC_INIT_BCD_VALUES'),(0x0c1b,0x0c28,'RTC_REGISTER_SEQUENCE'),(0x0e68,0x0e75,'MONTH_LENGTH_TABLE'),(0x0939,0x096c,'PACKED_CHARSET'),(0x096c,0x09d6,'PACKED_PHRASES'),(0x1a75,0x1a7c,'SEND_FORMAT_OPTION_TABLE'),(0x0f7d,0x10c0,'COMMAND_TABLE'),(0x10c0,0x112f,'SECONDARY_LOOKUP_TABLES'),(0x112f,0x163e,'PACKED_UI_DATA')]
     data_mask=set()
     for x,y,_ in DATA:data_mask.update(range(x,y))
     # Known entry points verified in earlier disassembly work, may represent subroutines rather than unique code areas.
@@ -153,7 +153,7 @@ def generate_source():
      0x0742:'LCD_READ',0x0755:'LCD_TRANSLATE_OUTPUT',0x0760:'LCD_COMMAND',0x076c:'LCD_CONTROL_SHADOW',0x077d:'LCD_TRANSLATION',
      0x0867:'LCD_MAIN_INIT',0x08cb:'DECODE_PACKED_MESSAGE',0x0925:'PACKED_READ_NIBBLE',0x09f0:'PACKED_MESSAGE_TO_RAM_4013',0x0885:'LCD_WAIT_READY',0x0896:'LCD_PATTERN_LOAD',0x0a34:'STATUS_SET_MASK',0x0a4a:'STATUS_CLEAR_MASK',
      0x0a77:'STATUS_REFRESH_DOCUMENTS',0x0a9a:'STATUS_REFRESH_ALL',0x0af2:'OUTPUT_MODE_KEY',0x0b0c:'AUX_QUEUE_OUTPUT',0x0b46:'AUX_OUTPUT_STRING',0x0b5d:'AUX_OUTPUT_RULE',
-     0x1b7a:'ONLINE_ENQ_Y_ANSWERBACK',0x1c89:'SEND_CR_WITH_OPTIONAL_Z_FILE',0x0b6c:'RTC_RESET_AND_INITIALIZE',0x0b94:'RTC_REFRESH_DISPLAY_VALUES',0x0bcc:'RTC_READ_REGISTER',0x0bdb:'RTC_END_ACCESS',0x0be3:'RTC_WRITE_REGISTER',0x0bed:'RTC_SELECT_BANK',0x0bf5:'RTC_READ_TIME_BLOCK',0x0c28:'RTC_WRITE_TIME_BLOCK',0x0c2c:'RTC_WRITE_FIELDS',0x0d00:'RTC_INCREMENT_DATE_FIELD',0x0e75:'RTC_VALIDATE_CALENDAR_DATE',0x0ef6:'RTC_TEST_BCD_LEAP_YEAR',0x0f11:'STATUS_DIRECTION_INDICATOR',0x18a9:'SERIAL_RECEIVE_SERVICE',0x18ab:'SERIAL_READ_STATUS',0x18dc:'SERIAL_READ_CHAR',
+     0x1973:'SEND_LITERAL_ENTRY',0x1978:'SEND_SELECT_FILE',0x19a7:'SEND_START_SELECTED_RECORD',0x19c6:'SEND_FORMATTED_SETUP',0x1a29:'PARSE_FILE_FORMAT_LINE',0x1a66:'READ_NEXT_FORMAT_BYTE',0x1a7c:'SAVE_TOGGLE_AND_SELECT_FILE',0x1b1f:'SAVE_APPEND_STAGED_LINE',0x1b4a:'PROCESS_RECEIVED_QUEUE_EVENT',0x1bfe:'SERIAL_TX_PUMP',0x1c6d:'SEND_PROCESS_NEXT_CHARACTER',0x1ce4:'DOCUMENT_APPEND_UPDATE_LENGTH',0x1b7a:'ONLINE_ENQ_Y_ANSWERBACK',0x1c89:'SEND_CR_WITH_OPTIONAL_Z_FILE',0x0b6c:'RTC_RESET_AND_INITIALIZE',0x0b94:'RTC_REFRESH_DISPLAY_VALUES',0x0bcc:'RTC_READ_REGISTER',0x0bdb:'RTC_END_ACCESS',0x0be3:'RTC_WRITE_REGISTER',0x0bed:'RTC_SELECT_BANK',0x0bf5:'RTC_READ_TIME_BLOCK',0x0c28:'RTC_WRITE_TIME_BLOCK',0x0c2c:'RTC_WRITE_FIELDS',0x0d00:'RTC_INCREMENT_DATE_FIELD',0x0e75:'RTC_VALIDATE_CALENDAR_DATE',0x0ef6:'RTC_TEST_BCD_LEAP_YEAR',0x0f11:'STATUS_DIRECTION_INDICATOR',0x18a9:'SERIAL_RECEIVE_SERVICE',0x18ab:'SERIAL_READ_STATUS',0x18dc:'SERIAL_READ_CHAR',
      0x1932:'SERIAL_XOFF_PATH',0x1c13:'TX_DEQUEUE',0x1c98:'SERIAL_SEND_CHAR',0x1ccc:'DOCUMENT_TX_INIT',
      0x1d14:'DOCUMENT_DIRECTORY_LOOKUP',0x1d32:'DIRECTORY_READ_ENTRY',0x1e80:'DOCUMENT_POOL_INIT',0x1f5f:'DIRECTORY_INDEX_TO_ADDRESS',
      0x21df:'AUX_OUTPUT_MEMORY',0x24b0:'EDITOR_UPDATE_POSITION',
@@ -241,6 +241,18 @@ def generate_source():
      0x0a77:'Document count at 4593h governs mask 0008h; candidate MEMORY indicator',
      0x0a9a:'Periodic refresh of firmware status indicators',
      0x0b5d:'40 ASCII hyphens and CR emitted to auxiliary channel: printer-style formatting',
+     0x1973:'CTL+SEND sets 451Fh=FFh bypassing format-line and special processing; manual p49',
+     0x1978:'SHIFT+SEND selects named file; keycode 96h; literal 99h joins here',
+     0x19a7:'File entry +2 pointer +4 length; literal to 4521/4523, formatted to 451B/451D',
+     0x19c6:'Formatted SEND parse optional leading ESC header, then send payload',
+     0x1a29:'Parse ESC prefix format clauses pX=char -> 4525h, pC=char -> 4526h',
+     0x1a75:'Seven-byte option table: x 4525h, c 4526h, 00 sentinel',
+     0x1a7c:'SHIFT+SAVE start/stop receive-to-file; active flag 4514h=FFh',
+     0x1b1f:'Append staged line at RAM 4013h to document at 4594h; update length/free via 1CE4h',
+     0x1b4a:'Main-loop receive queue consumer: ENQ/Y, screen, SAVE',
+     0x1bfe:'Periodic transmitter tests port 5Fh and pause flag 4517h',
+     0x1c6d:'Literal bypasses PC/Z transform; formatted uses pause 4526h and file Z on CR',
+     0x1ce4:'Update active document length/free pointer/available space after byte append',
      0x1b7a:'ENQ (ASCII 05h) online answer-back handler: checks configuration, looks up special file Y (59h) at 1B88h; 3M manual p.69',
      0x1b88:'Special answer-back file identifier Y=59h, directory lookup at 1B8Ah; 3M manual p.69',
      0x1c89:'CR-dependent end-of-line expansion: when configured look up file Z (5Ah) and transmit its content instead of CR; manual p.67',
@@ -291,6 +303,7 @@ def generate_source():
      0x10c0:'Nine keycode, 16-bit ROM handler pointer triples (0 terminator); used at 2986h and JP (HL) at 298Dh',
      0x10dc:'Four keycode, 16-bit pointer triples, 0 terminator; caller not located',
      0x10e9:'23 keycode, 16-bit ROM data pointer triples; used at 2003h as data, not executed',
+     0x1a75:'Two 3-byte format option records and NUL: x->4525h, c->4526h',
      0x112f:'Compressed message v2.1, referenced by boot and version display paths',
     }
     labels.update({p:name for p,name in DATA_LABELS.items() if p not in bybyte or p in seen})
