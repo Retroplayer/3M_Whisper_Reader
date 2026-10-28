@@ -3499,6 +3499,8 @@ loc_1CC8:
     LD (452Ah),A                               ; @1CC9  32 2A 45          
 DOCUMENT_TX_INIT:
     ; Document transfer setup: loads data pointer and length from directory entry
+    ; Special file Z redirect: set 451Fh=01 (temporary literal mode), distinct from CTL+SEND FFh.
+    ; At 1C56h end-of-redirect, this state is decremented to 0 and original CR processing resumes.
     INC A                                      ; @1CCC  3C                
     LD (451Fh),A                               ; @1CCD  32 1F 45          
     INC HL                                     ; @1CD0  23                
