@@ -98,3 +98,11 @@ Run \`python3 tools/verify_display_engine.py\` to check 29 byte-accurate instruc
 ## Experimental 40×2 editor ROM
 
 A [reproducible 40×2 test patch](patches/40x2/README.md), [annotated Z80 module](patches/40x2/module.asm), and [byte-exact builder](patches/40x2/build.py) are available without changing the original firmware. The patch selects HD44780 2-line/5×8 mode, adapts custom CGRAM loading, retains the factory row-1 editor renderer, and draws the next document line onto row 2. The supplied workpack includes nine instruction-level tests; it has **not been tested on physical hardware** and does **not yet** implement full two-row scrolling, HELP, or playback.
+
+## Experimental Windows emulator (v0.1.7 preview)
+
+A runnable, **early-access** emulation/debugging build is available in [`emulator/`](emulator/README.md). It executes the original, unmodified ROM images from [`roms/original/`](roms/original/) using a Z80-compatible Python CPU core and provisional hardware models.
+
+On Windows 10/11, download/clone the repository, install Python 3.11+, then run `emulator/START_EMULATOR.bat`. You can use the photo-based virtual keyboard, 40×1 LCD window, RTC, and diagnostic log. The clock initializes from your PC. The serial/modem, alarm IRQ, annunciator and hardware timing models are incomplete; this is **not** a full hardware-accuracy claim. See the [emulator instructions and limitations](emulator/README.md).
+
+To help find bugs, please [open an issue](https://github.com/Retroplayer/3M_Whisper_Reader/issues) with the steps to reproduce, screen output, emulator version and relevant log entries. The public preview ships with 42 CPU-independent regression tests; use `python -m unittest discover -s emulator/tests -v` from the repository root.
