@@ -1,0 +1,13 @@
+# Python / Windows build artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.log
+*.bak
+.DS_Store
+Thumbs.db
+# Emulator-local copies and user-created ROMs/RAM images
+emulator/roms/*.bin
+emulator/*.bin
