@@ -153,3 +153,17 @@ This **is not a finished two-line firmware patch**: it is the replacement strate
 - Full insertion/deletion edge cases and TAB behavior: not completely emulated; do not claim exhaustive runtime correctness.
 - The physical 40×2 controller and custom annunciator pinouts: not electrically tested.
 - Original ROM bytes must remain unchanged; run [source rebuild](../tools/assemble_source.py) and [display-engine verification](../tools/verify_display_engine.py) after editing.
+
+
+### Exact HELP page-selection mechanics
+
+A further trace resolves the previously generic "paged HELP" description:
+
+- \`2003h–200Dh\` looks up a key at \`10E9h\` and reads the first byte of the selected record as **C = number of HELP pages**, then stores the pointer to its compressed text at \`4503h\`.
+- \`2013h\` starts the page counter at **B = 1**. The display loop \`2016h–2021h\` clears the screen, sets \`HL=(4503h)\`, sets \`DE=4013h\`, calls \`08ACh\` with \`B-1\`, and then prints the resulting decoded page.
+- The compressed-message skip routine \`08ACh–08C8h\` steps over that many preceding packed-string terminators (nibble code \`0Ch\`) before decoding the desired page. It does **not** slice a fixed 40-byte page from an ASCII string.
+- \`2024h–2026h\` calls \`0A14h\` with the current page B and total C to set previous/next-page arrow indicators.
+- Key-dispatch handlers at \`2045h–2049h\` and \`204Eh–2053h\` adjust the page number within the valid range; another handler returns to the HELP key selection.
+- \`2055h–206Fh\` can send all pages through the auxiliary character-output channel by iteratively decoding each page to \`4013h\`.
+
+Thus HELP uses **packed variable-length message pages**, entirely separate from both the editor's logical CR-delimited lines and playback's 39-character presentation segments. Modifying the HELP content or adding a 40×2 HELP interface requires updating the page decoder/UI, not the document editor's cursor handler.
