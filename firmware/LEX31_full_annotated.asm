@@ -1314,7 +1314,8 @@ loc_089A:
     DJNZ loc_089A                              ; @08A8  10 F0             
     POP BC                                     ; @08AA  C1                
     RET                                        ; @08AB  C9                
-loc_08AC:
+HELP_SKIP_COMPRESSED_PAGES:
+    ; Skip B packed message pages at HL, counting 0Ch nibble terminators; decode selected page into DE.
     CALL loc_08F2                              ; @08AC  CD F2 08          
     LD A,B                                     ; @08AF  78                
     OR A                                       ; @08B0  B7                
@@ -1330,7 +1331,7 @@ loc_08BF:
     CP 0Ch                                     ; @08BF  FE 0C             
     JR NZ,loc_08B4                             ; @08C1  20 F1             
     CALL loc_08EB                              ; @08C3  CD EB 08          
-    JR loc_08AC                                ; @08C6  18 E4             
+    JR HELP_SKIP_COMPRESSED_PAGES                                ; @08C6  18 E4             
 loc_08C8:
     CALL loc_08EB                              ; @08C8  CD EB 08          
 DECODE_PACKED_MESSAGE:
@@ -2063,7 +2064,7 @@ loc_0DE3:
     LD B,A                                     ; @0E01  47                
 loc_0E02:
     DEC B                                      ; @0E02  05                
-    CALL loc_08AC                              ; @0E03  CD AC 08          
+    CALL HELP_SKIP_COMPRESSED_PAGES                              ; @0E03  CD AC 08          
     JR loc_0DE3                                ; @0E06  18 DB             
 loc_0E08:
     JP M,loc_0E39                              ; @0E08  FA 39 0E          
@@ -2360,7 +2361,7 @@ ORG 1000h
     DB 09h,74h,17h                              ; @102B  09 74 17   COMMAND 86h mode 09h -> loc_1774
     DB 03h,3Eh,1Fh                              ; @102E  03 3E 1F   COMMAND 86h mode 03h -> loc_1F3E
     DB 05h,7Ch,2Ch                              ; @1031  05 7C 2C   COMMAND 86h mode 05h -> loc_2C7C
-    DB 06h,45h,20h                              ; @1034  06 45 20   COMMAND 86h mode 06h -> loc_2045
+    DB 06h,45h,20h                              ; @1034  06 45 20   COMMAND 86h mode 06h -> HELP_PREVIOUS_PAGE
     DB 01h,D7h,25h                              ; @1037  01 D7 25   COMMAND 86h mode 01h -> EDITOR_MOVE_UP
     DB 04h,A6h,21h                              ; @103A  04 A6 21   COMMAND 86h mode 04h -> PLAYBACK_BACK_THREE_LINES
     DB 84h,07h                                  ; @103D  84 07   COMMAND 84h: 7 mode(s)
@@ -2384,7 +2385,7 @@ ORG 1000h
     DB 09h,7Ch,17h                              ; @1070  09 7C 17   COMMAND 85h mode 09h -> loc_177C
     DB 03h,34h,1Fh                              ; @1073  03 34 1F   COMMAND 85h mode 03h -> loc_1F34
     DB 05h,7Ch,2Ch                              ; @1076  05 7C 2C   COMMAND 85h mode 05h -> loc_2C7C
-    DB 06h,4Eh,20h                              ; @1079  06 4E 20   COMMAND 85h mode 06h -> loc_204E
+    DB 06h,4Eh,20h                              ; @1079  06 4E 20   COMMAND 85h mode 06h -> HELP_NEXT_PAGE
     DB 01h,91h,25h                              ; @107C  01 91 25   COMMAND 85h mode 01h -> EDITOR_MOVE_DOWN
     DB 04h,00h,22h                              ; @107F  04 00 22   COMMAND 85h mode 04h -> loc_2200
     DB C6h,03h                                  ; @1082  C6 03   COMMAND C6h: 3 mode(s)
@@ -2626,7 +2627,7 @@ loc_1703:
     CALL loc_0DAF                              ; @1705  CD AF 0D          
     LD DE,4013h                                ; @1708  11 13 40          
     LD HL,11DEh                                ; @170B  21 DE 11          
-    CALL loc_08AC                              ; @170E  CD AC 08          
+    CALL HELP_SKIP_COMPRESSED_PAGES                              ; @170E  CD AC 08          
     POP BC                                     ; @1711  C1                
     POP HL                                     ; @1712  E1                
     LD B,C                                     ; @1713  41                
@@ -2651,7 +2652,7 @@ loc_1724:
     ADD HL,DE                                  ; @172A  19                
     EX DE,HL                                   ; @172B  EB                
     LD HL,127Ch                                ; @172C  21 7C 12          
-    CALL loc_08AC                              ; @172F  CD AC 08          
+    CALL HELP_SKIP_COMPRESSED_PAGES                              ; @172F  CD AC 08          
     POP BC                                     ; @1732  C1                
     POP HL                                     ; @1733  E1                
     DJNZ loc_1714                              ; @1734  10 DE             
@@ -3990,7 +3991,8 @@ loc_1FDC:
     INC DE                                     ; @1FE1  13                
     DJNZ loc_1FD8                              ; @1FE2  10 F4             
     RET                                        ; @1FE4  C9                
-loc_1FE5:
+HELP_ENTER:
+    ; Enter HELP mode, save prior 40-cell LCD image, dispatch key to compressed-help data.
     LD A,06h                                   ; @1FE5  3E 06             
     CALL LCD_SAVE_MODAL_SCREEN                              ; @1FE7  CD E6 07          
     CALL loc_2072                              ; @1FEA  CD 72 20          
@@ -4016,8 +4018,9 @@ ORG 2000h
     LD C,(HL)                                  ; @200B  4E                
     INC HL                                     ; @200C  23                
     LD (4503h),HL                              ; @200D  22 03 45          
-    CALL loc_2055                              ; @2010  CD 55 20          
-loc_2013:
+    CALL HELP_SEND_ALL_PAGES_TO_AUX                              ; @2010  CD 55 20          
+HELP_SHOW_PAGE:
+    ; B = one-based page number; C = page count, 4503h = first packed page pointer.
     LD B,01h                                   ; @2013  06 01             
 loc_2015:
     PUSH BC                                    ; @2015  C5                
@@ -4025,7 +4028,7 @@ loc_2015:
     LD HL,(4503h)                              ; @2017  2A 03 45          
     LD DE,4013h                                ; @201A  11 13 40          
     DEC B                                      ; @201D  05                
-    CALL loc_08AC                              ; @201E  CD AC 08          
+    CALL HELP_SKIP_COMPRESSED_PAGES                              ; @201E  CD AC 08          
     CALL loc_09D7                              ; @2021  CD D7 09          
     POP BC                                     ; @2024  C1                
     PUSH BC                                    ; @2025  C5                
@@ -4039,14 +4042,15 @@ loc_2029:
 loc_2034:
     ; Dispatched for keycode/mode: C6/06
     POP BC                                     ; @2034  C1                
-    JR loc_2013                                ; @2035  18 DC             
+    JR HELP_SHOW_PAGE                                ; @2035  18 DC             
 loc_2037:
     CALL loc_0DAE                              ; @2037  CD AE 0D          
     LD HL,1638h                                ; @203A  21 38 16          
     CALL loc_003F                              ; @203D  CD 3F 00          
     CALL loc_0A64                              ; @2040  CD 64 0A          
     JR loc_1FED                                ; @2043  18 A8             
-loc_2045:
+HELP_PREVIOUS_PAGE:
+    ; Decrement page B (subject to bounds) and redraw.
     ; Dispatched for keycode/mode: 86/06
     POP BC                                     ; @2045  C1                
     DJNZ loc_2015                              ; @2046  10 CD             
@@ -4057,14 +4061,16 @@ loc_204B:
     ; Dispatched for keycode/mode: 8E/06
     POP BC                                     ; @204B  C1                
     JR loc_1FED                                ; @204C  18 9F             
-loc_204E:
+HELP_NEXT_PAGE:
+    ; Advance B up to total C and redraw.
     ; Dispatched for keycode/mode: 85/06
     POP BC                                     ; @204E  C1                
     LD A,B                                     ; @204F  78                
     CP C                                       ; @2050  B9                
     JR Z,loc_2015                              ; @2051  28 C2             
     JR loc_2048                                ; @2053  18 F3             
-loc_2055:
+HELP_SEND_ALL_PAGES_TO_AUX:
+    ; Iterate compressed HELP pages, decode at 4013h and queue to auxiliary output.
     PUSH BC                                    ; @2055  C5                
     CALL AUX_OUTPUT_RULE                       ; @2056  CD 5D 0B          
     LD B,00h                                   ; @2059  06 00             
@@ -4073,7 +4079,7 @@ loc_205B:
     CALL loc_0DAF                              ; @205C  CD AF 0D          
     LD HL,(4503h)                              ; @205F  2A 03 45          
     LD DE,4013h                                ; @2062  11 13 40          
-    CALL loc_08AC                              ; @2065  CD AC 08          
+    CALL HELP_SKIP_COMPRESSED_PAGES                              ; @2065  CD AC 08          
     POP BC                                     ; @2068  C1                
     CALL loc_0B57                              ; @2069  CD 57 0B          
     JR NZ,loc_205B                             ; @206C  20 ED             
@@ -4096,7 +4102,7 @@ loc_2072:
     CALL PACKED_MESSAGE_TO_RAM_4013                              ; @2087  CD F0 09          
     LD HL,11D0h                                ; @208A  21 D0 11          
     POP BC                                     ; @208D  C1                
-    CALL loc_08AC                              ; @208E  CD AC 08          
+    CALL HELP_SKIP_COMPRESSED_PAGES                              ; @208E  CD AC 08          
     CALL loc_09D7                              ; @2091  CD D7 09          
     CALL loc_0494                              ; @2094  CD 94 04          
     POP HL                                     ; @2097  E1                
