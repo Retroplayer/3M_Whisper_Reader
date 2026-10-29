@@ -147,7 +147,7 @@ def generate_source():
     # Known entry points verified in earlier disassembly work, may represent subroutines rather than unique code areas.
     NAMES={
      0x0000:'RESET_ENTRY',0x0030:'RST30_DISPLAY_PACKED_ROM_MESSAGE',0x002c:'NSC800_RSTC_PERIODIC_VECTOR',0x0034:'NSC800_RSTB_C000_VECTOR',0x0066:'NSC800_NMI_LOCKUP_VECTOR',0x0010:'RST10_LOAD_POINTERS',0x0018:'RST18_LCD_SERVICE',0x0020:'RST20_DOCUMENT_POINTERS',0x0028:'RST28_SET_INDICATOR',0x0038:'RST38_COMPARE_HL_DE',
-     0x00e3:'OS_MAIN_LOOP',0x017e:'PERIODIC_SERVICE',0x01e7:'AUX_OUTPUT_SERVICE',0x0214:'AUX_SEND_CHAR',0x0238:'OS_COMMAND_LOOKUP',
+     0x22b6:'EDITOR_SAVE_PREFERRED_COLUMN',0x22cb:'EDITOR_REDRAW_LOOP_ENTRY',0x22ce:'EDITOR_REDRAW_ACTIVE_WINDOW',0x22ff:'EDITOR_CHECK_MARGIN_WARNING',0x233b:'EDITOR_DRAW_40_CELL_VIEWPORT',0x23d3:'EDITOR_ADVANCE_CURSOR_STATE',0x2434:'EDITOR_HOME_DOCUMENT',0x245e:'EDITOR_MOVE_RIGHT',0x2466:'EDITOR_RESET_LINE_COLUMN',0x247a:'EDITOR_RESET_COLUMN_AND_CLEAR_FLAG',0x249b:'EDITOR_STEP_FORWARD',0x24aa:'EDITOR_SKIP_TO_EOL',0x24e2:'EDITOR_MOVE_LEFT',0x24f4:'EDITOR_SKIP_TO_BOL',0x2523:'EDITOR_END_DOCUMENT',0x2591:'EDITOR_MOVE_DOWN',0x25d7:'EDITOR_MOVE_UP',0x2689:'EDITOR_CHECK_LEFT_UP',0x26b3:'EDITOR_CHECK_RIGHT_DOWN',0x20b4:'PLAYBACK_START_DOCUMENT',0x20c2:'PLAYBACK_START_RECEIVE_BUFFER',0x2125:'PLAYBACK_RENDER_WINDOW',0x21a6:'PLAYBACK_BACK_THREE_LINES',0x21c5:'PLAYBACK_NEXT_BYTE',0x2214:'PLAYBACK_PREVIOUS_PRINTABLE',0x00e3:'OS_MAIN_LOOP',0x017e:'PERIODIC_SERVICE',0x01e7:'AUX_OUTPUT_SERVICE',0x0214:'AUX_SEND_CHAR',0x0238:'OS_COMMAND_LOOKUP',
      0x0288:'QUEUE_HANDLER_A',0x02d8:'QUEUE_HANDLER_B',0x035a:'KEY_SCAN',0x03aa:'KEY_TABLE_INDEX',0x03c6:'KEY_TRANSLATE_EVENT',
      0x04ad:'CHECKSUM_DOCUMENT_DIRECTORY',0x04ba:'CHECKSUM_PERSISTENT_SETTINGS',0x04c1:'DJ_ALT_SHORTCUT',0x04c6:'DJ_SHORTCUT',0x063d:'LCD_INIT_START',0x069e:'LCD_CHAR_OUTPUT',
      0x0742:'LCD_READ',0x0755:'LCD_TRANSLATE_OUTPUT',0x0760:'LCD_COMMAND',0x076c:'LCD_CONTROL_SHADOW',0x077d:'LCD_TRANSLATION',
@@ -209,6 +209,14 @@ def generate_source():
     COMMENT={
      0x0000:'CPU reset entry; U2 appears mapped at 0000h',
      0x0002:'Early output to port 47h (shared display/keyboard control)',
+     0x22cb:'CALL 22B6h before editor redraw; previously emitted as DB',
+     0x233b:'40-cell editor viewport from document cursor 4669h minus visual x 4004h',
+     0x245e:'Editor right 84h, forward step', 0x24e2:'Editor left 87h, backward step',
+     0x2591:'Editor down 85h, advance to next CR and preferred horizontal column',
+     0x25d7:'Editor up 86h, previous CR and preferred horizontal column',
+     0x2689:'LEFT/UP 0040h/0080h masks from prior document text',
+     0x26b3:'RIGHT/DOWN 0010h/0020h masks from following document text',
+     0x21a6:'Playback rewinds three CR boundaries',
      0x000b:'Stack pointer set to 4800h; OS working-RAM layout must be reviewed for conflicts',
      0x0074:'Cold-clear volatile working RAM 4000h..4591h by LDDR zero-copy; retained directory and settings remain intact',
      0x007e:'Write 06h to NSC800 internal interrupt control at BBh: enables RSTC and RSTB, masks RSTA/INTR',

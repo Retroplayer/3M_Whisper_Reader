@@ -2312,7 +2312,7 @@ COMMAND_DISPATCH_TABLE:  ; Packed keycode/mode/target records; U2/U3 boundary bi
     DB C0h,01h                                  ; @0FBE  C0 01   COMMAND C0h: 1 mode(s)
     DB 00h,C1h,04h                              ; @0FC0  00 C1 04   COMMAND C0h mode 00h -> DJ_ALT_SHORTCUT
     DB 88h,03h                                  ; @0FC3  88 03   COMMAND 88h: 3 mode(s)
-    DB 00h,C2h,20h                              ; @0FC5  00 C2 20   COMMAND 88h mode 00h -> loc_20C2
+    DB 00h,C2h,20h                              ; @0FC5  00 C2 20   COMMAND 88h mode 00h -> PLAYBACK_START_RECEIVE_BUFFER
     DB 01h,4Eh,26h                              ; @0FC8  01 4E 26   COMMAND 88h mode 01h -> loc_264E
     DB 04h,A9h,20h                              ; @0FCB  04 A9 20   COMMAND 88h mode 04h -> loc_20A9
     DB 91h,04h                                  ; @0FCE  91 04   COMMAND 91h: 4 mode(s)
@@ -2361,14 +2361,14 @@ ORG 1000h
     DB 03h,3Eh,1Fh                              ; @102E  03 3E 1F   COMMAND 86h mode 03h -> loc_1F3E
     DB 05h,7Ch,2Ch                              ; @1031  05 7C 2C   COMMAND 86h mode 05h -> loc_2C7C
     DB 06h,45h,20h                              ; @1034  06 45 20   COMMAND 86h mode 06h -> loc_2045
-    DB 01h,D7h,25h                              ; @1037  01 D7 25   COMMAND 86h mode 01h -> loc_25D7
-    DB 04h,A6h,21h                              ; @103A  04 A6 21   COMMAND 86h mode 04h -> loc_21A6
+    DB 01h,D7h,25h                              ; @1037  01 D7 25   COMMAND 86h mode 01h -> EDITOR_MOVE_UP
+    DB 04h,A6h,21h                              ; @103A  04 A6 21   COMMAND 86h mode 04h -> PLAYBACK_BACK_THREE_LINES
     DB 84h,07h                                  ; @103D  84 07   COMMAND 84h: 7 mode(s)
     DB 08h,58h,0Dh                              ; @103F  08 58 0D   COMMAND 84h mode 08h -> loc_0D58
     DB 02h,81h,16h                              ; @1042  02 81 16   COMMAND 84h mode 02h -> loc_1681
     DB 09h,3Fh,17h                              ; @1045  09 3F 17   COMMAND 84h mode 09h -> loc_173F
     DB 05h,6Ch,2Ch                              ; @1048  05 6C 2C   COMMAND 84h mode 05h -> loc_2C6C
-    DB 01h,5Eh,24h                              ; @104B  01 5E 24   COMMAND 84h mode 01h -> loc_245E
+    DB 01h,5Eh,24h                              ; @104B  01 5E 24   COMMAND 84h mode 01h -> EDITOR_MOVE_RIGHT
     DB 0Ah,F0h,27h                              ; @104E  0A F0 27   COMMAND 84h mode 0Ah -> loc_27F0
     DB 0Bh,F0h,27h                              ; @1051  0B F0 27   COMMAND 84h mode 0Bh -> loc_27F0
     DB 87h,07h                                  ; @1054  87 07   COMMAND 87h: 7 mode(s)
@@ -2376,7 +2376,7 @@ ORG 1000h
     DB 02h,79h,16h                              ; @1059  02 79 16   COMMAND 87h mode 02h -> loc_1679
     DB 09h,37h,17h                              ; @105C  09 37 17   COMMAND 87h mode 09h -> loc_1737
     DB 05h,5Ah,2Ch                              ; @105F  05 5A 2C   COMMAND 87h mode 05h -> loc_2C5A
-    DB 01h,E2h,24h                              ; @1062  01 E2 24   COMMAND 87h mode 01h -> loc_24E2
+    DB 01h,E2h,24h                              ; @1062  01 E2 24   COMMAND 87h mode 01h -> EDITOR_MOVE_LEFT
     DB 0Ah,E6h,27h                              ; @1065  0A E6 27   COMMAND 87h mode 0Ah -> loc_27E6
     DB 0Bh,E6h,27h                              ; @1068  0B E6 27   COMMAND 87h mode 0Bh -> loc_27E6
     DB 85h,07h                                  ; @106B  85 07   COMMAND 85h: 7 mode(s)
@@ -2385,19 +2385,19 @@ ORG 1000h
     DB 03h,34h,1Fh                              ; @1073  03 34 1F   COMMAND 85h mode 03h -> loc_1F34
     DB 05h,7Ch,2Ch                              ; @1076  05 7C 2C   COMMAND 85h mode 05h -> loc_2C7C
     DB 06h,4Eh,20h                              ; @1079  06 4E 20   COMMAND 85h mode 06h -> loc_204E
-    DB 01h,91h,25h                              ; @107C  01 91 25   COMMAND 85h mode 01h -> loc_2591
+    DB 01h,91h,25h                              ; @107C  01 91 25   COMMAND 85h mode 01h -> EDITOR_MOVE_DOWN
     DB 04h,00h,22h                              ; @107F  04 00 22   COMMAND 85h mode 04h -> loc_2200
     DB C6h,03h                                  ; @1082  C6 03   COMMAND C6h: 3 mode(s)
     DB 09h,8Bh,17h                              ; @1084  09 8B 17   COMMAND C6h mode 09h -> loc_178B
     DB 06h,34h,20h                              ; @1087  06 34 20   COMMAND C6h mode 06h -> loc_2034
-    DB 01h,34h,24h                              ; @108A  01 34 24   COMMAND C6h mode 01h -> loc_2434
+    DB 01h,34h,24h                              ; @108A  01 34 24   COMMAND C6h mode 01h -> EDITOR_HOME_DOCUMENT
     DB C5h,02h                                  ; @108D  C5 02   COMMAND C5h: 2 mode(s)
     DB 09h,8Eh,17h                              ; @108F  09 8E 17   COMMAND C5h mode 09h -> loc_178E
-    DB 01h,23h,25h                              ; @1092  01 23 25   COMMAND C5h mode 01h -> loc_2523
+    DB 01h,23h,25h                              ; @1092  01 23 25   COMMAND C5h mode 01h -> EDITOR_END_DOCUMENT
     DB C7h,01h                                  ; @1095  C7 01   COMMAND C7h: 1 mode(s)
-    DB 01h,F4h,24h                              ; @1097  01 F4 24   COMMAND C7h mode 01h -> loc_24F4
+    DB 01h,F4h,24h                              ; @1097  01 F4 24   COMMAND C7h mode 01h -> EDITOR_SKIP_TO_BOL
     DB C4h,01h                                  ; @109A  C4 01   COMMAND C4h: 1 mode(s)
-    DB 01h,AAh,24h                              ; @109C  01 AA 24   COMMAND C4h mode 01h -> loc_24AA
+    DB 01h,AAh,24h                              ; @109C  01 AA 24   COMMAND C4h mode 01h -> EDITOR_SKIP_TO_EOL
     DB 8Eh,0Ah                                  ; @109F  8E 0A   COMMAND 8Eh: 10 mode(s)
     DB 08h,D4h,0Ch                              ; @10A1  08 D4 0C   COMMAND 8Eh mode 08h -> loc_0CD4
     DB 02h,DBh,0Ch                              ; @10A4  02 DB 0C   COMMAND 8Eh mode 02h -> loc_0CDB
@@ -4116,15 +4116,17 @@ loc_20A9:
     CALL LCD_RESTORE_MODAL_SCREEN                              ; @20AB  CD 28 08          
     LD A,(4509h)                               ; @20AE  3A 09 45          
     OR A                                       ; @20B1  B7                
-    JR Z,loc_20C2                              ; @20B2  28 0E             
-loc_20B4:
+    JR Z,PLAYBACK_START_RECEIVE_BUFFER                              ; @20B2  28 0E             
+PLAYBACK_START_DOCUMENT:
+    ; Select document address/length for playback.
     LD BC,0000h                                ; @20B4  01 00 00          
 loc_20B7:
     LD DE,(459Ah)                              ; @20B7  ED 5B 9A 45       
     LD HL,(459Ch)                              ; @20BB  2A 9C 45          
     LD A,FFh                                   ; @20BE  3E FF             
     JR loc_20CF                                ; @20C0  18 0D             
-loc_20C2:
+PLAYBACK_START_RECEIVE_BUFFER:
+    ; Select circular receive buffer for playback.
     ; Dispatched for keycode/mode: 88/00
     LD BC,0000h                                ; @20C2  01 00 00          
 loc_20C5:
@@ -4144,7 +4146,7 @@ loc_20CF:
     LD A,04h                                   ; @20E1  3E 04             
     CALL LCD_SAVE_MODAL_SCREEN                              ; @20E3  CD E6 07          
 loc_20E6:
-    CALL loc_2125                              ; @20E6  CD 25 21          
+    CALL PLAYBACK_RENDER_WINDOW                              ; @20E6  CD 25 21          
     LD A,(4512h)                               ; @20E9  3A 12 45          
     OR A                                       ; @20EC  B7                
     JR Z,loc_20F6                              ; @20ED  28 07             
@@ -4176,14 +4178,15 @@ loc_2116:
     EI                                         ; @211F  FB                
     LD BC,03FFh                                ; @2120  01 FF 03          
     JR loc_20C5                                ; @2123  18 A0             
-loc_2125:
+PLAYBACK_RENDER_WINDOW:
+    ; Render text until CR/39-character threshold, then pause/check controls.
     XOR A                                      ; @2125  AF                
     LD (4512h),A                               ; @2126  32 12 45          
     INC A                                      ; @2129  3C                
     LD (4511h),A                               ; @212A  32 11 45          
 loc_212D:
     CALL loc_219A                              ; @212D  CD 9A 21          
-    CALL loc_21C5                              ; @2130  CD C5 21          
+    CALL PLAYBACK_NEXT_BYTE                              ; @2130  CD C5 21          
     OR A                                       ; @2133  B7                
     JR Z,loc_2185                              ; @2134  28 4F             
     CP 0Dh                                     ; @2136  FE 0D             
@@ -4243,17 +4246,18 @@ loc_219A:
     LD A,(465Fh)                               ; @219D  3A 5F 46          
     LD (44F7h),A                               ; @21A0  32 F7 44          
     JP STATUS_DIRECTION_INDICATOR              ; @21A3  C3 11 0F          
-loc_21A6:
+PLAYBACK_BACK_THREE_LINES:
+    ; Move backwards across three CR boundaries in playback.
     ; Dispatched for keycode/mode: 86/04
-    CALL loc_2214                              ; @21A6  CD 14 22          
+    CALL PLAYBACK_PREVIOUS_PRINTABLE                              ; @21A6  CD 14 22          
     OR A                                       ; @21A9  B7                
     RET Z                                      ; @21AA  C8                
     CP 0Dh                                     ; @21AB  FE 0D             
-    JR NZ,loc_21A6                             ; @21AD  20 F7             
+    JR NZ,PLAYBACK_BACK_THREE_LINES                             ; @21AD  20 F7             
     LD HL,4513h                                ; @21AF  21 13 45          
     DEC (HL)                                   ; @21B2  35                
-    JR NZ,loc_21A6                             ; @21B3  20 F1             
-    JR loc_21C5                                ; @21B5  18 0E             
+    JR NZ,PLAYBACK_BACK_THREE_LINES                             ; @21B3  20 F1             
+    JR PLAYBACK_NEXT_BYTE                                ; @21B5  18 0E             
 loc_21B7:
     ; Dispatched for keycode/mode: 8C/04
     XOR A                                      ; @21B7  AF                
@@ -4267,7 +4271,8 @@ loc_21C0:
     POP HL                                     ; @21C0  E1                
     POP HL                                     ; @21C1  E1                
     JP loc_2102                                ; @21C2  C3 02 21          
-loc_21C5:
+PLAYBACK_NEXT_BYTE:
+    ; Fetch byte from file or receive-buffer source.
     LD HL,(450Eh)                              ; @21C5  2A 0E 45          
     EX DE,HL                                   ; @21C8  EB                
     LD HL,(450Ch)                              ; @21C9  2A 0C 45          
@@ -4289,9 +4294,9 @@ AUX_OUTPUT_MEMORY:
     CP 0Dh                                     ; @21E3  FE 0D             
     RET Z                                      ; @21E5  C8                
     CP 20h                                     ; @21E6  FE 20             
-    JR C,loc_21C5                              ; @21E8  38 DB             
+    JR C,PLAYBACK_NEXT_BYTE                              ; @21E8  38 DB             
     OR A                                       ; @21EA  B7                
-    JP M,loc_21C5                              ; @21EB  FA C5 21          
+    JP M,PLAYBACK_NEXT_BYTE                              ; @21EB  FA C5 21          
     RET                                        ; @21EE  C9                
 loc_21EF:
     LD A,H                                     ; @21EF  7C                
@@ -4323,7 +4328,8 @@ loc_2201:
     OR A                                       ; @2210  B7                
     SBC HL,DE                                  ; @2211  ED 52             
     RET                                        ; @2213  C9                
-loc_2214:
+PLAYBACK_PREVIOUS_PRINTABLE:
+    ; Rewind to preceding printable byte or CR.
     LD HL,(450Ch)                              ; @2214  2A 0C 45          
     LD A,H                                     ; @2217  7C                
     OR L                                       ; @2218  B5                
@@ -4340,9 +4346,9 @@ loc_2214:
     CP 0Dh                                     ; @222C  FE 0D             
     RET Z                                      ; @222E  C8                
     CP 20h                                     ; @222F  FE 20             
-    JR C,loc_2214                              ; @2231  38 E1             
+    JR C,PLAYBACK_PREVIOUS_PRINTABLE                              ; @2231  38 E1             
     OR A                                       ; @2233  B7                
-    JP M,loc_2214                              ; @2234  FA 14 22          
+    JP M,PLAYBACK_PREVIOUS_PRINTABLE                              ; @2234  FA 14 22          
     RET                                        ; @2237  C9                
 loc_2238:
     ; Dispatched for keycode/mode: 95/01
@@ -4399,7 +4405,7 @@ loc_2295:
     CALL loc_0045                              ; @2298  CD 45 00          
     CALL loc_26E5                              ; @229B  CD E5 26          
     LD (4667h),HL                              ; @229E  22 67 46          
-    CALL loc_247A                              ; @22A1  CD 7A 24          
+    CALL EDITOR_RESET_COLUMN_AND_CLEAR_FLAG                              ; @22A1  CD 7A 24          
     LD (458Fh),HL                              ; @22A4  22 8F 45          
     LD HL,22CBh                                ; @22A7  21 CB 22          
     PUSH HL                                    ; @22AA  E5                
@@ -4407,8 +4413,9 @@ loc_2295:
     LD A,H                                     ; @22AE  7C                
     OR L                                       ; @22AF  B5                
     JP Z,loc_2423                              ; @22B0  CA 23 24          
-    JP loc_2523                                ; @22B3  C3 23 25          
-loc_22B6:
+    JP EDITOR_END_DOCUMENT                                ; @22B3  C3 23 25          
+EDITOR_SAVE_PREFERRED_COLUMN:
+    ; Save logical x position from 4583h into 458Fh for vertical navigation.
     LD HL,(4583h)                              ; @22B6  2A 83 45          
     LD (458Fh),HL                              ; @22B9  22 8F 45          
     LD A,(4004h)                               ; @22BC  3A 04 40          
@@ -4419,17 +4426,20 @@ loc_22B6:
     LD A,01h                                   ; @22C5  3E 01             
     LD (4591h),A                               ; @22C7  32 91 45          
     RET                                        ; @22CA  C9                
-    DB CDh,B6h,22h                              ; @22CB  CD B6 22
-loc_22CE:
-    CALL loc_233B                              ; @22CE  CD 3B 23          
-    CALL loc_22FF                              ; @22D1  CD FF 22          
+EDITOR_REDRAW_LOOP_ENTRY:
+    ; Call 22B6h before screen redraw (previous disassembly incorrectly showed DB).
+    CALL EDITOR_SAVE_PREFERRED_COLUMN          ; @22CB  CD B6 22
+EDITOR_REDRAW_ACTIVE_WINDOW:
+    ; Redraw 40 cells, test margin, refresh direction annunciators.
+    CALL EDITOR_DRAW_40_CELL_VIEWPORT                              ; @22CE  CD 3B 23          
+    CALL EDITOR_CHECK_MARGIN_WARNING                              ; @22D1  CD FF 22          
     LD HL,(459Ch)                              ; @22D4  2A 9C 45          
     LD A,H                                     ; @22D7  7C                
     OR L                                       ; @22D8  B5                
     JR Z,loc_22E4                              ; @22D9  28 09             
     LD HL,0000h                                ; @22DB  21 00 00          
-    CALL loc_2689                              ; @22DE  CD 89 26          
-    CALL loc_26B3                              ; @22E1  CD B3 26          
+    CALL EDITOR_CHECK_LEFT_UP                              ; @22DE  CD 89 26          
+    CALL EDITOR_CHECK_RIGHT_DOWN                              ; @22E1  CD B3 26          
 loc_22E4:
     PUSH HL                                    ; @22E4  E5                
     RST 28h                                    ; @22E5  EF                
@@ -4447,7 +4457,8 @@ loc_22EF:
     CALL OS_COMMAND_LOOKUP                     ; @22F8  CD 38 02          
     JP NC,loc_2392                             ; @22FB  D2 92 23          
     JP (HL)                                    ; @22FE  E9                
-loc_22FF:
+EDITOR_CHECK_MARGIN_WARNING:
+    ; Parse optional margin-warning header from stored text.
     LD HL,(459Ah)                              ; @22FF  2A 9A 45          
     LD A,1Bh                                   ; @2302  3E 1B             
     CP (HL)                                    ; @2304  BE                
@@ -4491,7 +4502,8 @@ loc_232F:
     JP NZ,loc_232F                             ; @2333  C2 2F 23          
     LD L,7Fh                                   ; @2336  2E 7F             
     JP loc_016F                                ; @2338  C3 6F 01          
-loc_233B:
+EDITOR_DRAW_40_CELL_VIEWPORT:
+    ; Start=4669h-4004h+1; draw before/after cursor, stop at CR, file end or 40 cells.
     LD HL,(4669h)                              ; @233B  2A 69 46          
     LD D,00h                                   ; @233E  16 00             
     LD A,(4004h)                               ; @2340  3A 04 40          
@@ -4516,6 +4528,7 @@ loc_2350:
 loc_235B:
     LD A,20h                                   ; @235B  3E 20             
     CALL LCD_TRANSLATE_OUTPUT                  ; @235D  CD 55 07          
+    ; Render only 40 physical LCD cells.
     LD A,28h                                   ; @2360  3E 28             
     SUB B                                      ; @2362  90                
     LD B,A                                     ; @2363  47                
@@ -4585,10 +4598,11 @@ loc_23C0:
     LD (HL),A                                  ; @23C7  77                
     JR NZ,loc_23D0                             ; @23C8  20 06             
     CALL loc_23D0                              ; @23CA  CD D0 23          
-    JP loc_2466                                ; @23CD  C3 66 24          
+    JP EDITOR_RESET_LINE_COLUMN                                ; @23CD  C3 66 24          
 loc_23D0:
     CALL DOCUMENT_APPEND_UPDATE_LENGTH                              ; @23D0  CD E4 1C          
-loc_23D3:
+EDITOR_ADVANCE_CURSOR_STATE:
+    ; Update 4669h, 4583h and visual column 4004h (maximum 40).
     LD HL,4004h                                ; @23D3  21 04 40          
     LD A,28h                                   ; @23D6  3E 28             
     CP (HL)                                    ; @23D8  BE                
@@ -4643,11 +4657,12 @@ loc_2423:
     CALL loc_1E05                              ; @242B  CD 05 1E          
     CALL loc_26E5                              ; @242E  CD E5 26          
     LD (4667h),HL                              ; @2431  22 67 46          
-loc_2434:
+EDITOR_HOME_DOCUMENT:
+    ; SHIFT+UP/C6h: go to start of document.
     ; Dispatched for keycode/mode: C6/01
     LD A,01h                                   ; @2434  3E 01             
     LD (4004h),A                               ; @2436  32 04 40          
-    CALL loc_247A                              ; @2439  CD 7A 24          
+    CALL EDITOR_RESET_COLUMN_AND_CLEAR_FLAG                              ; @2439  CD 7A 24          
     LD HL,(459Ch)                              ; @243C  2A 9C 45          
     LD A,H                                     ; @243F  7C                
     OR L                                       ; @2440  B5                
@@ -4659,20 +4674,22 @@ loc_2449:
     DEC HL                                     ; @2449  2B                
     LD (4669h),HL                              ; @244A  22 69 46          
     CALL loc_24FE                              ; @244D  CD FE 24          
-    CALL loc_247A                              ; @2450  CD 7A 24          
+    CALL EDITOR_RESET_COLUMN_AND_CLEAR_FLAG                              ; @2450  CD 7A 24          
     LD A,01h                                   ; @2453  3E 01             
     LD (4004h),A                               ; @2455  32 04 40          
 loc_2458:
-    CALL loc_249B                              ; @2458  CD 9B 24          
+    CALL EDITOR_STEP_FORWARD                              ; @2458  CD 9B 24          
     JR NZ,loc_2458                             ; @245B  20 FB             
     RET                                        ; @245D  C9                
-loc_245E:
+EDITOR_MOVE_RIGHT:
+    ; Right/84h: advance through document and handle CR.
     ; Dispatched for keycode/mode: 84/01
     CALL loc_2481                              ; @245E  CD 81 24          
-    CALL loc_249B                              ; @2461  CD 9B 24          
+    CALL EDITOR_STEP_FORWARD                              ; @2461  CD 9B 24          
     RET NC                                     ; @2464  D0                
     RET NZ                                     ; @2465  C0                
-loc_2466:
+EDITOR_RESET_LINE_COLUMN:
+    ; Clear current logical column and reset line-entry state.
     LD HL,0000h                                ; @2466  21 00 00          
     LD (4583h),HL                              ; @2469  22 83 45          
     LD A,05h                                   ; @246C  3E 05             
@@ -4681,8 +4698,9 @@ loc_2466:
     LD (453Fh),A                               ; @2474  32 3F 45          
     LD A,00h                                   ; @2477  3E 00             
     RET                                        ; @2479  C9                
-loc_247A:
-    CALL loc_2466                              ; @247A  CD 66 24          
+EDITOR_RESET_COLUMN_AND_CLEAR_FLAG:
+    ; Clear line-transition flag 4539h.
+    CALL EDITOR_RESET_LINE_COLUMN                              ; @247A  CD 66 24          
     LD (4539h),A                               ; @247D  32 39 45          
     RET                                        ; @2480  C9                
 loc_2481:
@@ -4704,7 +4722,8 @@ loc_2481:
 loc_2499:
     POP HL                                     ; @2499  E1                
     RET                                        ; @249A  C9                
-loc_249B:
+EDITOR_STEP_FORWARD:
+    ; Advance one byte; C=1 on success, Z=1 for CR; C=0,Z=1 at EOF.
     RST 20h                                    ; @249B  E7                
     RST 38h                                    ; @249C  FF                
     SCF                                        ; @249D  37                
@@ -4713,16 +4732,18 @@ loc_249B:
     LD A,(HL)                                  ; @24A0  7E                
     XOR 0Dh                                    ; @24A1  EE 0D             
     PUSH AF                                    ; @24A3  F5                
-    CALL loc_23D3                              ; @24A4  CD D3 23          
+    CALL EDITOR_ADVANCE_CURSOR_STATE                              ; @24A4  CD D3 23          
     POP AF                                     ; @24A7  F1                
     SCF                                        ; @24A8  37                
     RET                                        ; @24A9  C9                
-loc_24AA:
+EDITOR_SKIP_TO_EOL:
+    ; SHIFT+RIGHT/C4h: advance to CR boundary.
     ; Dispatched for keycode/mode: C4/01
-    CALL loc_245E                              ; @24AA  CD 5E 24          
-    JR NZ,loc_24AA                             ; @24AD  20 FB             
+    CALL EDITOR_MOVE_RIGHT                              ; @24AA  CD 5E 24          
+    JR NZ,EDITOR_SKIP_TO_EOL                             ; @24AD  20 FB             
     RET                                        ; @24AF  C9                
 EDITOR_UPDATE_POSITION:
+    ; Step backwards one document byte; CR boundary drives left-arrow correction.
     LD HL,(4669h)                              ; @24B0  2A 69 46          
     LD DE,(459Ah)                              ; @24B3  ED 5B 9A 45       
     RST 38h                                    ; @24B7  FF                
@@ -4731,7 +4752,7 @@ EDITOR_UPDATE_POSITION:
     DEC HL                                     ; @24BA  2B                
     LD A,(HL)                                  ; @24BB  7E                
     CP 0Dh                                     ; @24BC  FE 0D             
-    JR Z,loc_2466                              ; @24BE  28 A6             
+    JR Z,EDITOR_RESET_LINE_COLUMN                              ; @24BE  28 A6             
 loc_24C0:
     LD (4669h),HL                              ; @24C0  22 69 46          
     LD HL,4004h                                ; @24C3  21 04 40          
@@ -4752,7 +4773,8 @@ loc_24DD:
     LD (4582h),A                               ; @24DD  32 82 45          
     OR A                                       ; @24E0  B7                
     RET                                        ; @24E1  C9                
-loc_24E2:
+EDITOR_MOVE_LEFT:
+    ; Left/87h: retreat one byte, handling previous CR boundary.
     ; Dispatched for keycode/mode: 87/01
     CALL EDITOR_UPDATE_POSITION                ; @24E2  CD B0 24          
     RET NZ                                     ; @24E5  C0                
@@ -4762,20 +4784,21 @@ loc_24E2:
     LD HL,(4669h)                              ; @24ED  2A 69 46          
     DEC HL                                     ; @24F0  2B                
     JP loc_24C0                                ; @24F1  C3 C0 24          
-loc_24F4:
+EDITOR_SKIP_TO_BOL:
+    ; SHIFT+LEFT/C7h: rewind to line start.
     ; Dispatched for keycode/mode: C7/01
     LD HL,4539h                                ; @24F4  21 39 45          
     LD A,(HL)                                  ; @24F7  7E                
     OR A                                       ; @24F8  B7                
     LD (HL),00h                                ; @24F9  36 00             
-    CALL NZ,loc_24E2                           ; @24FB  C4 E2 24          
+    CALL NZ,EDITOR_MOVE_LEFT                           ; @24FB  C4 E2 24          
 loc_24FE:
     CALL EDITOR_UPDATE_POSITION                ; @24FE  CD B0 24          
     JR NZ,loc_24FE                             ; @2501  20 FB             
     RET C                                      ; @2503  D8                
     LD A,01h                                   ; @2504  3E 01             
     LD (4004h),A                               ; @2506  32 04 40          
-    JP loc_247A                                ; @2509  C3 7A 24          
+    JP EDITOR_RESET_COLUMN_AND_CLEAR_FLAG                                ; @2509  C3 7A 24          
 loc_250C:
     LD HL,(4596h)                              ; @250C  2A 96 45          
     LD A,H                                     ; @250F  7C                
@@ -4788,7 +4811,8 @@ loc_250C:
     CALL loc_016C                              ; @251A  CD 6C 01          
     CALL loc_0A64                              ; @251D  CD 64 0A          
     JP loc_0CDC                                ; @2520  C3 DC 0C          
-loc_2523:
+EDITOR_END_DOCUMENT:
+    ; SHIFT+DOWN/C5h: go to document end.
     ; Dispatched for keycode/mode: C5/01
     LD A,01h                                   ; @2523  3E 01             
     LD (4004h),A                               ; @2525  32 04 40          
@@ -4806,9 +4830,9 @@ loc_253A:
     JP loc_2651                                ; @253D  C3 51 26          
 loc_2540:
     ; Dispatched for keycode/mode: 91/01
-    CALL loc_24E2                              ; @2540  CD E2 24          
+    CALL EDITOR_MOVE_LEFT                              ; @2540  CD E2 24          
     RET C                                      ; @2543  D8                
-    CALL loc_22B6                              ; @2544  CD B6 22          
+    CALL EDITOR_SAVE_PREFERRED_COLUMN                              ; @2544  CD B6 22          
     LD HL,(4669h)                              ; @2547  2A 69 46          
     LD C,(HL)                                  ; @254A  4E                
     JR loc_2553                                ; @254B  18 06             
@@ -4866,7 +4890,8 @@ loc_2588:
     OR C                                       ; @258D  B1                
     JR NZ,loc_2588                             ; @258E  20 F8             
     RET                                        ; @2590  C9                
-loc_2591:
+EDITOR_MOVE_DOWN:
+    ; Down/85h: find next CR and restore preferred horizontal column.
     ; Dispatched for keycode/mode: 85/01
     RST 20h                                    ; @2591  E7                
     RST 38h                                    ; @2592  FF                
@@ -4875,29 +4900,29 @@ loc_2591:
     OR A                                       ; @2598  B7                
     JR NZ,loc_25CC                             ; @2599  20 31             
 loc_259B:
-    CALL loc_249B                              ; @259B  CD 9B 24          
+    CALL EDITOR_STEP_FORWARD                              ; @259B  CD 9B 24          
     JR NZ,loc_259B                             ; @259E  20 FB             
     JR NC,loc_25BE                             ; @25A0  30 1C             
 loc_25A2:
     LD A,01h                                   ; @25A2  3E 01             
     LD (4004h),A                               ; @25A4  32 04 40          
-    CALL loc_247A                              ; @25A7  CD 7A 24          
+    CALL EDITOR_RESET_COLUMN_AND_CLEAR_FLAG                              ; @25A7  CD 7A 24          
 loc_25AA:
     LD HL,(4583h)                              ; @25AA  2A 83 45          
     LD DE,(458Fh)                              ; @25AD  ED 5B 8F 45       
     RST 38h                                    ; @25B1  FF                
     JR Z,loc_25BE                              ; @25B2  28 0A             
-    CALL loc_245E                              ; @25B4  CD 5E 24          
+    CALL EDITOR_MOVE_RIGHT                              ; @25B4  CD 5E 24          
     JR NZ,loc_25AA                             ; @25B7  20 F1             
     LD A,01h                                   ; @25B9  3E 01             
     LD (453Bh),A                               ; @25BB  32 3B 45          
 loc_25BE:
     POP HL                                     ; @25BE  E1                
-    JP loc_22CE                                ; @25BF  C3 CE 22          
+    JP EDITOR_REDRAW_ACTIVE_WINDOW                                ; @25BF  C3 CE 22          
 loc_25C2:
     LD A,01h                                   ; @25C2  3E 01             
     LD (4004h),A                               ; @25C4  32 04 40          
-    CALL loc_247A                              ; @25C7  CD 7A 24          
+    CALL EDITOR_RESET_COLUMN_AND_CLEAR_FLAG                              ; @25C7  CD 7A 24          
     JR loc_25BE                                ; @25CA  18 F2             
 loc_25CC:
     LD HL,453Bh                                ; @25CC  21 3B 45          
@@ -4906,7 +4931,8 @@ loc_25CC:
     LD (HL),00h                                ; @25D1  36 00             
     JR NZ,loc_25A2                             ; @25D3  20 CD             
     JR loc_25C2                                ; @25D5  18 EB             
-loc_25D7:
+EDITOR_MOVE_UP:
+    ; Up/86h: rewind to previous CR and restore preferred horizontal column.
     ; Dispatched for keycode/mode: 86/01
     LD HL,4539h                                ; @25D7  21 39 45          
     LD A,(HL)                                  ; @25DA  7E                
@@ -4975,15 +5001,15 @@ loc_2649:
     JR loc_2651                                ; @264C  18 03             
 loc_264E:
     ; Dispatched for keycode/mode: 88/01
-    CALL loc_20B4                              ; @264E  CD B4 20          
+    CALL PLAYBACK_START_DOCUMENT                              ; @264E  CD B4 20          
 loc_2651:
     CALL loc_24FE                              ; @2651  CD FE 24          
-    CALL loc_247A                              ; @2654  CD 7A 24          
-    JP loc_24AA                                ; @2657  C3 AA 24          
+    CALL EDITOR_RESET_COLUMN_AND_CLEAR_FLAG                              ; @2654  CD 7A 24          
+    JP EDITOR_SKIP_TO_EOL                                ; @2657  C3 AA 24          
 loc_265A:
     ; Dispatched for keycode/mode: 83/01
     CALL loc_1EC2                              ; @265A  CD C2 1E          
-    JP loc_2434                                ; @265D  C3 34 24          
+    JP EDITOR_HOME_DOCUMENT                                ; @265D  C3 34 24          
 loc_2660:
     XOR A                                      ; @2660  AF                
     LD (453Fh),A                               ; @2661  32 3F 45          
@@ -5015,7 +5041,8 @@ loc_2679:
     INC DE                                     ; @2685  13                
     JR NZ,loc_2679                             ; @2686  20 F1             
     RET                                        ; @2688  C9                
-loc_2689:
+EDITOR_CHECK_LEFT_UP:
+    ; Compute 0040h=LEFT and 0080h=UP indicator bits.
     PUSH HL                                    ; @2689  E5                
     LD DE,(4669h)                              ; @268A  ED 5B 69 46       
     LD HL,(459Ah)                              ; @268E  2A 9A 45          
@@ -5046,7 +5073,8 @@ loc_26AF:
     POP HL                                     ; @26AF  E1                
     LD L,40h                                   ; @26B0  2E 40             
     RET                                        ; @26B2  C9                
-loc_26B3:
+EDITOR_CHECK_RIGHT_DOWN:
+    ; Compute 0010h=RIGHT and 0020h=DOWN indicator bits.
     PUSH HL                                    ; @26B3  E5                
     LD DE,(4669h)                              ; @26B4  ED 5B 69 46       
     LD HL,(4594h)                              ; @26B8  2A 94 45          
@@ -5394,14 +5422,14 @@ loc_28A5:
     CALL loc_24FE                              ; @28A9  CD FE 24          
     LD A,01h                                   ; @28AC  3E 01             
     LD (4004h),A                               ; @28AE  32 04 40          
-    CALL loc_247A                              ; @28B1  CD 7A 24          
+    CALL EDITOR_RESET_COLUMN_AND_CLEAR_FLAG                              ; @28B1  CD 7A 24          
 loc_28B4:
     LD DE,(4669h)                              ; @28B4  ED 5B 69 46       
     EX (SP),HL                                 ; @28B8  E3                
     RST 38h                                    ; @28B9  FF                
     JR Z,loc_28C2                              ; @28BA  28 06             
     EX (SP),HL                                 ; @28BC  E3                
-    CALL loc_249B                              ; @28BD  CD 9B 24          
+    CALL EDITOR_STEP_FORWARD                              ; @28BD  CD 9B 24          
     JR loc_28B4                                ; @28C0  18 F2             
 loc_28C2:
     POP HL                                     ; @28C2  E1                
