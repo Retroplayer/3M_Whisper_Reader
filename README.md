@@ -94,3 +94,7 @@ The [display engine analysis](docs/display_engine.md) traces the 40-cell editor 
 The original ROM's four arrow masks are \`0010h\` RIGHT, \`0020h\` DOWN, \`0040h\` LEFT, \`0080h\` UP. Text is stored as a linear CR-delimited byte stream, **not** 40-column pages. The editor cursor (\`4669h\`), visible 1–40 column (\`4004h\`), logical column (\`4583h\`), and preferred vertical-navigation column (\`458Fh\`) are separate state variables. The playback engine and modal HELP screens have separate paging and presentation logic.
 
 Run \`python3 tools/verify_display_engine.py\` to check 29 byte-accurate instruction signatures against the preserved original EPROMs. The 40×2 upgrade is **not yet a complete firmware patch**; the two-row rendering strategy and all currently identified dependent routines are documented.
+
+## Experimental 40×2 editor ROM
+
+A [reproducible 40×2 test patch](patches/40x2/README.md), [annotated Z80 module](patches/40x2/module.asm), and [byte-exact builder](patches/40x2/build.py) are available without changing the original firmware. The patch selects HD44780 2-line/5×8 mode, adapts custom CGRAM loading, retains the factory row-1 editor renderer, and draws the next document line onto row 2. The supplied workpack includes nine instruction-level tests; it has **not been tested on physical hardware** and does **not yet** implement full two-row scrolling, HELP, or playback.
