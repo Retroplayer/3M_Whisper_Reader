@@ -85,3 +85,12 @@ This knowledge is integrated into [the annotated disassembly](firmware/LEX31_ful
 The discovered option-descriptor table is at \`1855h–1890h\` and the config editor changes stored bits at \`4654h–4656h\` through \`1792h\`, then updates a retained-RAM XOR checksum at \`4657h\`. Original 40×1 LCD initialization includes four custom CGRAM patterns, and temporary screen save/restore assumes 40 cells; both require specific work for the planned 40×2 display.
 
 Rebuild the CSV indexes using \`python3 tools/audit_rom_tables.py\`. All physical hardware pin mappings, expansion memory decoding, and RAM-code loading remain work in progress; do not treat this software audit as a board schematic.
+
+
+## Editor viewport, scrolling and playback (source-level reconstruction)
+
+The [display engine analysis](docs/display_engine.md) traces the 40-cell editor renderer (\`233Bh\`), all eight normal/SHIFT arrow handlers, the 1-based visual cursor, CR-delimited line navigation, four central arrow annunciator bits, and the independent playback renderer (\`2125h\`). The [annotated assembly](firmware/LEX31_full_annotated.asm) names these routines, including the actual \`CALL 22B6h\` at \`22CBh\` that earlier disassembly versions mistakenly left as \`DB\`.
+
+The original ROM's four arrow masks are \`0010h\` RIGHT, \`0020h\` DOWN, \`0040h\` LEFT, \`0080h\` UP. Text is stored as a linear CR-delimited byte stream, **not** 40-column pages. The editor cursor (\`4669h\`), visible 1–40 column (\`4004h\`), logical column (\`4583h\`), and preferred vertical-navigation column (\`458Fh\`) are separate state variables. The playback engine and modal HELP screens have separate paging and presentation logic.
+
+Run \`python3 tools/verify_display_engine.py\` to check 29 byte-accurate instruction signatures against the preserved original EPROMs. The 40×2 upgrade is **not yet a complete firmware patch**; the two-row rendering strategy and all currently identified dependent routines are documented.
